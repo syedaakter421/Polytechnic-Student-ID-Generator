@@ -1,0 +1,6 @@
+{
+  "name": "Polytechnic Student ID Generator",
+  "description": "A comprehensive full-stack ID card generation system for Bangladesh Government Polytechnic Institutes, featuring secure student/admin authentication, dynamic ID card creation with QR codes, and a professional government-themed UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

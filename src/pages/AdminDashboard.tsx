@@ -1,0 +1,974 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Student, SystemSettings } from '../types';
+import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, Download, User as UserIcon, Menu } from 'lucide-react';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import IDCard from '../components/IDCard';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { motion, AnimatePresence } from 'motion/react';
+import { safeFetch } from '../lib/fetchUtils';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { toPng } from 'html-to-image';
+
+export default function AdminDashboard({ user, onLogout }: { user: User, onLogout: () => void }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = () => {
+    onLogout();
+    navigate('/');
+  };
+
+  const navLinks = [
+    { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/students', label: 'Student List', icon: Users },
+    { to: '/admin/reports', label: 'Reports', icon: FileText },
+    { to: '/admin/settings', label: 'Settings', icon: Settings },
+  ];
+
+  return (
+    <div className="min-h-screen admin-page flex bg-slate-50 relative overflow-x-hidden">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 flex flex-col p-4 shadow-xl z-[70] transition-transform duration-300 transform
+        lg:translate-x-0 lg:static lg:shadow-sm
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-4 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center p-1 border border-slate-200 shadow-sm overflow-hidden">
+               <img src="/images/logo.png" className="w-full h-full object-contain" alt="Logo" />
+             </div>
+             <div>
+               <h2 className="font-black text-slate-800 text-sm font-bengali leading-none">এডমিন প্যানেল</h2>
+               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Admin Panel</p>
+             </div>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="flex-1 space-y-2">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-black mb-4 px-3">System Control</div>
+          
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = location.pathname === link.to;
+            return (
+              <Link 
+                key={link.to}
+                to={link.to} 
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${isActive ? 'bg-gov-green text-white shadow-lg shadow-gov-green/20' : 'text-slate-600 hover:bg-gov-green/5 hover:text-gov-green'}`}
+              >
+                <Icon size={18} /> {link.label}
+              </Link>
+            );
+          })}
+
+          <div className="pt-4 border-t border-slate-100 mt-4">
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gov-red hover:bg-gov-red/5 transition-all text-sm font-bold">
+              <LogOut size={18} /> Logout Session
+            </button>
+          </div>
+        </nav>
+      </aside>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="bg-white h-auto py-4 border-b border-slate-200 px-4 md:px-8 flex items-center justify-between gap-4 shadow-sm sticky top-0 z-50">
+           <div className="flex items-center gap-4">
+             <button 
+               onClick={() => setSidebarOpen(true)}
+               className="lg:hidden p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-gov-green hover:text-white transition-all shadow-sm"
+             >
+               <Menu size={20} />
+             </button>
+             <h1 className="text-[11px] xs:text-xs sm:text-sm md:text-lg lg:text-xl font-black text-slate-800 font-bengali leading-tight">
+               বাংলাদেশ কারিগরি শিক্ষা বোর্ড - <span className="text-gov-green">সেন্ট্রাল ডাটাবেস</span>
+             </h1>
+           </div>
+           
+           <div className="flex items-center gap-2 md:gap-4 shrink-0">
+              <div className="text-right hidden sm:block">
+                <span className="text-xs font-black text-slate-800 block">{user.full_name}</span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest block">Senior Administrator</span>
+              </div>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-xl md:rounded-2xl flex items-center justify-center font-black shadow-lg text-sm">SA</div>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 md:p-2.5 bg-red-50 text-red-600 rounded-lg md:rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group border border-red-100 hidden xs:block"
+                  title="Sign Out"
+                >
+                  <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
+           </div>
+        </header>
+
+        <main className="p-4 md:p-6 lg:p-8 flex-1 bg-slate-50">
+          <Routes>
+            <Route path="/" element={<AdminHome />} />
+            <Route path="/students" element={<StudentManagement />} />
+            <Route path="/settings" element={<SettingsManagement />} />
+            <Route path="*" element={<div className="p-10 md:p-20 text-center text-slate-400 font-bengali bg-white rounded-3xl border border-dashed border-slate-200">সেকশনটি শীঘ্রই আপডেট করা হবে।</div>} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function SettingsManagement() {
+  const [settings, setSettings] = useState<any>(null);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const fetchSettings = () => {
+    safeFetch('/api/settings')
+      .then(setSettings)
+      .catch(err => console.error('Settings fetch error:', err));
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, name: string) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviews(prev => ({ ...prev, [name]: url }));
+    }
+  };
+
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+
+  const updatePosition = (key: string, field: string, value: any) => {
+    const newPositions = JSON.parse(settings.field_positions);
+    newPositions[activeSide][key][field] = value;
+    setSettings({...settings, field_positions: JSON.stringify(newPositions)});
+  };
+
+  const getPositions = () => {
+    if (!settings.field_positions) return {};
+    const parsed = JSON.parse(settings.field_positions);
+    return parsed[activeSide] || {};
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    setStatus(null);
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      await safeFetch('/api/admin/settings', {
+        method: 'POST',
+        body: formData
+      });
+      setStatus({ type: 'success', message: 'সেটিংস সফলভাবে আপডেট হয়েছে।' });
+      setPreviews({}); // Clear local previews
+      fetchSettings(); // Refresh settings to show new uploads
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setStatus(null), 5000);
+    } catch (err: any) {
+      console.error(err);
+      setStatus({ type: 'error', message: 'সেটিংস আপডেট ব্যর্থ হয়েছে: ' + err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!settings) return <div className="p-20 text-center text-slate-400 font-bengali">লোড হচ্ছে...</div>;
+
+  return (
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-x-hidden">
+      {status && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`p-4 rounded-2xl flex items-center gap-3 font-bengali text-sm shadow-sm border ${
+            status.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-600'
+          }`}
+        >
+          {status.type === 'success' ? <Check size={18} /> : <X size={18} />}
+          {status.message}
+        </motion.div>
+      )}
+      <div className="bg-white p-4 md:p-8 rounded-[24px] md:rounded-[32px] shadow-xl border border-slate-100">
+        <h2 className="text-xl md:text-2xl font-black font-bengali text-slate-800 mb-6 md:mb-8 border-b border-slate-100 pb-4">Smart ID Card Generator সেটিংস</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-10">
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-8">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest block font-bengali mb-4">আইডি কার্ড টেম্পলেট</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl border-2 border-gov-green bg-gov-green/5 ring-4 ring-gov-green/10 transition-all text-left">
+                <p className="text-sm font-black text-gov-green">Sherpur Official</p>
+                <p className="text-[10px] text-slate-400 mt-1">Hardcoded System Design</p>
+              </div>
+            </div>
+            <input type="hidden" name="id_card_template" value="sherpur" />
+            <input type="hidden" name="field_positions" value={settings.field_positions} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 pt-8 border-t border-slate-100">
+            {/* Signatures */}
+            <div className="space-y-4">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest block font-bengali">অধ্যক্ষের স্বাক্ষর (Principal)</label>
+              <div className="relative group">
+                <div className="border-2 border-dashed border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center transition-all group-hover:border-gov-green/50 hover:bg-slate-50">
+                   {(previews.principal_signature || settings.principal_signature_path) ? (
+                      <div className="relative">
+                        <img src={previews.principal_signature || settings.principal_signature_path} className="h-12 md:h-16 w-auto object-contain mb-4" alt="Principal Sign" />
+                        <span className="text-[8px] text-slate-400 block text-center uppercase tracking-widest">Current Signature</span>
+                      </div>
+                   ) : (
+                      <div className="text-slate-300 flex flex-col items-center">
+                        <Download size={32} className="mb-2 rotate-180" />
+                        <p className="text-[10px] md:text-xs font-bold">আপলোড করুন</p>
+                      </div>
+                   )}
+                   <input type="file" name="principal_signature" onChange={(e) => handleFileChange(e, 'principal_signature')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest block font-bengali">রেজিস্ট্রারের স্বাক্ষর (Registrar)</label>
+              <div className="relative group">
+                <div className="border-2 border-dashed border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center transition-all group-hover:border-gov-green/50 hover:bg-slate-50">
+                   {(previews.registrar_signature || settings.registrar_signature_path) ? (
+                      <div className="relative">
+                        <img src={previews.registrar_signature || settings.registrar_signature_path} className="h-12 md:h-16 w-auto object-contain mb-4" alt="Registrar Sign" />
+                        <span className="text-[8px] text-slate-400 block text-center uppercase tracking-widest">Current Signature</span>
+                      </div>
+                   ) : (
+                      <div className="text-slate-300 flex flex-col items-center">
+                        <Download size={32} className="mb-2 rotate-180" />
+                        <p className="text-[10px] md:text-xs font-bold">আপলোড করুন</p>
+                      </div>
+                   )}
+                   <input type="file" name="registrar_signature" onChange={(e) => handleFileChange(e, 'registrar_signature')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-6 md:pt-8">
+            <button 
+              disabled={saving}
+              className="w-full sm:w-auto bg-gov-green text-white px-8 md:px-12 py-3 md:py-4 rounded-2xl font-black shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
+            >
+              {saving ? 'আপডেট হচ্ছে...' : 'সেটিংস সংরক্ষণ করুন'}
+              <Check size={20} />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AdminHome() {
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, printed: 0 });
+  const [recent, setRecent] = useState<Student[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setError(null);
+    safeFetch('/api/admin/stats')
+      .then(setStats)
+      .catch((err) => {
+        console.error('Stats error:', err);
+        setError(err.message);
+      });
+      
+    safeFetch('/api/admin/students')
+      .then(data => {
+        const sorted = (Array.isArray(data) ? data : [])
+          .sort((a, b) => {
+            if (a.is_downloaded !== b.is_downloaded) {
+              return a.is_downloaded - b.is_downloaded;
+            }
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          });
+        setRecent(sorted.slice(0, 5));
+      })
+      .catch((err) => console.error('Recent students error:', err));
+  }, []);
+
+  return (
+    <div className="space-y-6 md:space-y-10">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl flex items-center gap-3 font-bengali text-sm">
+          <X size={18} className="shrink-0" />
+          {error}
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+         <StatsCard label="মোট স্টুডেন্ট" value={stats.total.toString()} color="bg-blue-600" />
+         <StatsCard label="প্রিন্টেড কার্ড" value={stats.printed.toString()} color="bg-purple-600" />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b flex items-center justify-between">
+           <h3 className="font-bold text-lg font-bengali">সাম্প্রতিক রেজিস্ট্রেশন</h3>
+           <Link to="/admin/students" className="text-gov-green text-sm font-bold border border-gov-green px-4 py-1 rounded-full hover:bg-gov-green hover:text-white transition-all font-bengali">সব দেখুন</Link>
+        </div>
+        <div className="p-0 overflow-x-auto">
+           <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b text-gray-500 uppercase text-[11px] font-bold">
+                 <tr>
+                    <th className="px-6 py-4">Student Name</th>
+                    <th className="px-6 py-4">Technology</th>
+                    <th className="px-6 py-4">Roll</th>
+                 </tr>
+              </thead>
+              <tbody className="divide-y">
+                 {recent.map(student => (
+                   <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-medium flex items-center gap-2">
+                         {student.full_name_en}
+                         {!student.is_downloaded && (
+                           <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">New</span>
+                         )}
+                       </td>
+                      <td className="px-6 py-4">{student.technology}</td>
+                      <td className="px-6 py-4 text-gray-500">{student.roll_number}</td>
+                   </tr>
+                 ))}
+              </tbody>
+           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudentManagement() {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sessionFilter, setSessionFilter] = useState('');
+  const [techFilter, setTechFilter] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [modalMode, setModalMode] = useState<'details' | 'idcard' | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 30;
+
+  const [isZipping, setIsZipping] = useState(false);
+  const [zipProgress, setZipProgress] = useState(0);
+  const [processingStudent, setProcessingStudent] = useState<Student | null>(null);
+  const batchFrontRef = useRef<HTMLDivElement>(null);
+  const batchBackRef = useRef<HTMLDivElement>(null);
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
+
+  useEffect(() => {
+    safeFetch('/api/settings').then(setSettings).catch(console.error);
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const data = await safeFetch('/api/admin/students');
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (e: any) {
+      console.error(e);
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchStudents(); }, []);
+
+  const updateStatus = async (id: number, status: string) => {
+    try {
+      await safeFetch(`/api/admin/students/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      fetchStudents();
+    } catch (err: any) {
+      console.error('Update status error:', err);
+      alert('স্ট্যাটাস আপডেট ব্যর্থ হয়েছে: ' + err.message);
+    }
+  };
+
+  const deleteStudent = async (id: number) => {
+    if (!confirm('Are you sure?')) return;
+    try {
+      await safeFetch(`/api/admin/students/${id}`, { method: 'DELETE' });
+      fetchStudents();
+    } catch (err: any) {
+      console.error('Delete student error:', err);
+      alert('ডিলিট করতে সমস্যা হয়েছে: ' + err.message);
+    }
+  };
+
+  const filtered = students
+    .filter(s => {
+      const matchesSearch = s.full_name_en.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          s.roll_number.includes(searchTerm);
+      const matchesSession = !sessionFilter || s.session === sessionFilter;
+      const matchesTech = !techFilter || s.technology === techFilter;
+      return matchesSearch && matchesSession && matchesTech;
+    })
+    .sort((a, b) => {
+      if (a.is_downloaded !== b.is_downloaded) {
+        return a.is_downloaded - b.is_downloaded;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+  const sessions = Array.from(new Set(students.map(s => s.session))).sort().reverse();
+  const technologies = Array.from(new Set(students.map(s => s.technology))).sort();
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedStudents = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sessionFilter, techFilter]);
+
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    doc.setFontSize(20);
+    doc.text('Sherpur Polytechnic Institute - Student List', 15, 15);
+    doc.setFontSize(10);
+    doc.text(`Exported on: ${new Date().toLocaleString()}`, 15, 22);
+
+    const headers = [['Full Name', 'Roll Number', 'Technology', 'Semester', 'Shift', 'Mobile']];
+    const data = filtered.map(s => [
+      s.full_name_en,
+      s.roll_number,
+      s.technology,
+      s.semester,
+      s.shift,
+      s.mobile
+    ]);
+
+    (doc as any).autoTable({
+      head: headers,
+      body: data,
+      startY: 30,
+      theme: 'grid',
+      headStyles: { fillBox: '#006a4e' },
+    });
+
+    doc.save('student_list.pdf');
+  };
+
+  const exportToZIP = async () => {
+    const newStudents = filtered.filter(s => !s.is_downloaded);
+    if (newStudents.length === 0) {
+      alert('নতুন কোনো স্টুডেন্ট নেই।');
+      return;
+    }
+
+    if (!confirm(`${newStudents.length} জন নতুন শিক্ষার্থীর আইডি কার্ড জিপ ফাইলে ডাউনলোড হবে। অবিরত রাখতে চান?`)) return;
+
+    setIsZipping(true);
+    setZipProgress(0);
+    const zip = new JSZip();
+    const options = { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' };
+
+    try {
+      await (document as any).fonts.ready;
+      
+      for (let i = 0; i < newStudents.length; i++) {
+        const student = newStudents[i];
+        setProcessingStudent(student);
+        setZipProgress(Math.round(((i) / newStudents.length) * 100));
+        
+        // Wait for rendering & images
+        await new Promise(r => setTimeout(r, 800));
+        
+        if (batchFrontRef.current && batchBackRef.current) {
+          const frontData = await toPng(batchFrontRef.current, options);
+          const backData = await toPng(batchBackRef.current, options);
+          
+          zip.file(`${student.roll_number}_FRONT.png`, frontData.split(',')[1], { base64: true });
+          zip.file(`${student.roll_number}_BACK.png`, backData.split(',')[1], { base64: true });
+          
+          await safeFetch(`/api/admin/students/${student.id}/downloaded`, { method: 'PATCH' });
+        }
+      }
+
+      setZipProgress(100);
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `NEW_ID_CARDS_${new Date().toISOString().split('T')[0]}.zip`);
+      fetchStudents();
+    } catch (err) {
+      console.error('ZIP Error:', err);
+      alert('জিপ ফাইল তৈরি করতে সমস্যা হয়েছে।');
+    } finally {
+      setIsZipping(false);
+      setProcessingStudent(null);
+    }
+  };
+
+  const renderFrontSide = (student: Student) => (
+    <div ref={batchFrontRef} className="w-[791px] h-[1169px] bg-white rounded-[24px] border border-slate-300 relative overflow-hidden flex flex-col shrink-0 font-sans">
+        <div className="relative h-full w-full bg-gradient-to-b from-white via-[#00a8c5] to-[#50c8d8] text-center overflow-hidden">
+          <div className="pt-8">
+            <div className="flex justify-center mb-4">
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png" 
+                className="w-[140px] h-[140px] object-contain" 
+                alt="" 
+                crossOrigin="anonymous" 
+              />
+            </div>
+            <div className="w-full bg-[#004d61] py-3">
+              <h1 className="text-[28px] font-black text-white uppercase tracking-tight">SHERPUR POLYTECHNIC INSTITUTE, SHERPUR</h1>
+            </div>
+          </div>
+          <div className="h-[320px] bg-[#dff3f6] [clip-path:ellipse(80%_100%_at_50%_0%)] flex justify-center">
+            <div className="w-[340px] bg-[#ffcc29] -mt-1 p-[8px] rounded-b-[160px] h-[360px] shadow-xl z-10">
+              <div className="text-[28px] font-black text-slate-800 mb-2 mt-2">Student ID Card</div>
+              <div className="bg-slate-200 w-[260px] h-[280px] mx-auto rounded-b-[120px] border-[6px] border-white overflow-hidden shadow-inner flex items-center justify-center">
+                {student.photo_path ? (
+                  <img src={student.photo_path} className="w-full h-full object-cover" alt="" crossOrigin="anonymous" />
+                ) : (
+                  <UserIcon size={100} className="text-slate-400" />
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="mt-20 px-12 text-[#002d3a] flex flex-col items-center">
+             <h2 className="text-[48px] font-black uppercase mb-4 tracking-wide">{student.full_name_en}</h2>
+             <div className="space-y-2 w-full text-[28px]">
+               <p className="flex justify-center gap-2"><span className="font-black">Technology :</span> <span className="font-bold uppercase">{student.technology}</span></p>
+               <p className="flex justify-center gap-2"><span className="font-black">Roll No :</span> <span className="font-bold">{student.roll_number}</span></p>
+               <p className="flex justify-center gap-2"><span className="font-black">Shift:</span> <span className="font-bold">{student.shift || 'SHIFT'}</span></p>
+               <div className="mt-4 flex flex-col items-center">
+                 <span className="text-[24px] font-black mb-2">Semester:</span>
+                 <div className="flex gap-1">
+                   {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(sem => (
+                     <span 
+                       key={sem} 
+                       className={`border-2 border-[#002d3a] px-2.5 py-0.5 text-[18px] font-black ${student.semester === sem ? 'bg-[#002d3a] text-white' : 'bg-transparent text-[#002d3a]'}`}
+                     >
+                       {sem}
+                     </span>
+                   ))}
+                 </div>
+               </div>
+               <p className="flex justify-center gap-2 mt-2"><span className="font-black">Session:</span> <span className="font-bold">{student.session}</span></p>
+             </div>
+          </div>
+          <div className="absolute bottom-16 left-0 w-full px-20 flex justify-between">
+            <div className="text-center w-[200px]">
+              <div className="h-20 flex items-end justify-center mb-1">
+                {settings?.registrar_signature_path && <img src={settings.registrar_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
+              </div>
+              <div className="border-t-2 border-[#002d3a] pt-1 font-black text-[22px]">Registrar</div>
+            </div>
+            <div className="text-center w-[200px]">
+              <div className="h-20 flex items-end justify-center mb-1">
+                {settings?.principal_signature_path && <img src={settings.principal_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
+              </div>
+              <div className="border-t-2 border-[#002d3a] pt-1 font-black text-[22px]">Principal</div>
+            </div>
+          </div>
+        </div>
+    </div>
+  );
+
+  const renderBackSide = (student: Student) => (
+    <div ref={batchBackRef} className="w-[791px] h-[1169px] bg-white rounded-[24px] border border-slate-300 relative overflow-hidden flex flex-col shrink-0 font-sans">
+        <div className="relative h-full w-full bg-white flex flex-col">
+            <div className="h-[40px] bg-[#FFBC0D]"></div>
+            <div className="bg-[#00a0be] text-white py-3 mt-[40px] text-center font-black text-[26px]">SHERPUR POLYTECHNIC INSTITUTE, SHERPUR.</div>
+            <div className="p-12 h-full flex flex-col items-center">
+               <div className="flex items-center bg-slate-100 px-6 py-3 rounded-xl border-2 border-slate-200 shadow-inner mb-8">
+                  <span className="text-[24px] font-black text-slate-800 mr-4">Valid Upto : </span>
+                  <span className="text-[24px] font-black text-[#00a0be] uppercase tracking-wide">{student.valid_upto || '2027'}</span>
+               </div>
+               
+               <div className="border-2 border-slate-800 rounded-full px-12 py-3 bg-slate-50 mb-8">
+                 <h4 className="text-[22px] font-black uppercase text-slate-800 tracking-wider">Personal Details</h4>
+               </div>
+
+               <div className="w-full space-y-6 text-[25px] font-black text-slate-800 px-4">
+                  <p className="flex border-b-2 border-slate-100 pb-2">Fathers Name : <span className="font-bold text-slate-600 ml-4">{student.father_name || 'N/A'}</span></p>
+                  <p className="flex border-b-2 border-slate-100 pb-2">Mothers Name : <span className="font-bold text-slate-600 ml-4">{student.mother_name || 'N/A'}</span></p>
+                  <p className="flex border-b-2 border-slate-100 pb-2">Blood Group : <span className="font-black text-red-600 ml-4">{student.blood_group || 'N/A'}</span></p>
+                  <p className="flex border-b-2 border-slate-100 pb-2">Guardian Mobile : <span className="font-bold text-slate-600 ml-4">{student.guardian_mobile || 'N/A'}</span></p>
+                  <p className="flex border-b-2 border-slate-100 pb-2">Student Mobile : <span className="font-bold text-slate-600 ml-4">{student.mobile || 'N/A'}</span></p>
+               </div>
+
+               <div className="mt-8 w-full">
+                  <h4 className="text-[24px] font-black text-slate-800 mb-4 border-b-4 border-[#00a0be] inline-block pb-1">Address :</h4>
+                  <div className="grid grid-cols-1 gap-4 text-[20px] font-bold text-slate-600 px-4">
+                    <p>Village: {student.address}</p>
+                  </div>
+               </div>
+
+               <div className="absolute bottom-8 left-0 w-full flex justify-center">
+                  <div className="bg-[#00a0be] text-white p-6 w-[90%] rounded-2xl text-center shadow-xl">
+                     <p className="text-[18px] font-black uppercase mb-2 leading-none">If found please return to</p>
+                     <h3 className="text-[26px] font-black uppercase mb-1">SHERPUR POLYTECHNIC INSTITUTE</h3>
+                     <p className="text-[18px] font-bold mb-3">Bhatshala, Sherpur-2100, Contact: 01309136071</p>
+                     <div className="border-t border-white/30 pt-3">
+                        <p className="text-[16px] font-black tracking-widest">web: https://sherpur.polytech.gov.bd</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+        </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Hidden container for ZIP processing */}
+      {processingStudent && (
+        <div style={{ position: 'fixed', left: '-9999px', top: '-9999px' }}>
+          {renderFrontSide(processingStudent)}
+          <div style={{ marginTop: '50px' }}>
+            {renderBackSide(processingStudent)}
+          </div>
+        </div>
+      )}
+
+      {isZipping && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] flex items-center justify-center p-6 text-center">
+          <div className="bg-white p-10 rounded-[32px] shadow-2xl max-w-sm w-full space-y-6">
+            <div className="w-20 h-20 bg-gov-green/10 text-gov-green rounded-full flex items-center justify-center mx-auto animate-bounce">
+              <Download size={40} />
+            </div>
+            <div>
+              <h4 className="text-xl font-black font-bengali">জিপ ফাইল তৈরি হচ্ছে...</h4>
+              <p className="text-sm text-slate-400 mt-2 font-bold uppercase tracking-widest">{zipProgress}% COMPLETED</p>
+            </div>
+            <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+               <motion.div 
+                 className="bg-gov-green h-full" 
+                 initial={{ width: 0 }}
+                 animate={{ width: `${zipProgress}%` }}
+               />
+            </div>
+            <p className="text-xs text-slate-500 font-medium">অনুগ্রহ করে অপেক্ষা করুন, এটি কিছুক্ষণ সময় নিতে পারে।</p>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <h3 className="text-xl md:text-2xl font-bold font-bengali">শিক্ষার্থী ব্যবস্থাপনা</h3>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <select 
+            className="border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-gov-green/20 bg-white"
+            value={techFilter}
+            onChange={e => setTechFilter(e.target.value)}
+          >
+            <option value="">সকল টেকনোলজি</option>
+            {technologies.map(tech => (
+              <option key={tech} value={tech}>{tech}</option>
+            ))}
+          </select>
+
+          <select 
+            className="border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-gov-green/20 bg-white"
+            value={sessionFilter}
+            onChange={e => setSessionFilter(e.target.value)}
+          >
+            <option value="">সকল সেশন</option>
+            {sessions.map(sess => (sess && (
+              <option key={sess} value={sess}>{sess}</option>
+            )))}
+          </select>
+
+          <button 
+            onClick={exportToZIP}
+            disabled={isZipping}
+            className="bg-gov-green text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gov-green-dark transition-all font-bengali shadow-lg shadow-gov-green/10 disabled:opacity-50"
+          >
+            <Download size={18} /> সব ডাউনলোড (ZIP)
+          </button>
+          <div className="relative flex-1 md:flex-none">
+             <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+             <input 
+               type="text" 
+               placeholder="Search by Name or Roll..." 
+               className="pl-10 pr-4 py-2 border rounded-xl w-full md:w-72 focus:ring-2 focus:ring-gov-green/20"
+               value={searchTerm}
+               onChange={e => setSearchTerm(e.target.value)}
+             />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden max-w-full">
+        {loading ? (
+          <div className="p-20 text-center text-gray-400 font-bengali">লোডিং হচ্ছে...</div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto w-full scrollbar-thin scrollbar-thumb-slate-200">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-slate-50 border-b text-gray-500 uppercase text-[10px] font-bold whitespace-nowrap">
+                   <tr>
+                      <th className="px-6 py-4">Student</th>
+                      <th className="px-6 py-4">Details</th>
+                      <th className="px-6 py-4 text-center">Actions</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y">
+                   {paginatedStudents.map(student => (
+                     <tr key={student.id} className="hover:bg-indigo-50/20 transition-colors">
+                        <td className="px-6 py-6 min-w-[280px]">
+                           <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border shrink-0">
+                               <img src={student.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
+                             </div>
+                             <div className="whitespace-nowrap">
+                               <div className="flex items-center gap-2">
+                                 <p className="font-bold text-slate-800">{student.full_name_en}</p>
+                                 {!student.is_downloaded && (
+                                   <span className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md animate-pulse">NEW</span>
+                                 )}
+                               </div>
+                               <p className="text-xs text-gray-500 font-bengali">{student.full_name_bn}</p>
+                             </div>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 min-w-[160px] whitespace-nowrap">
+                           <p className="text-xs font-bold text-gov-green">{student.technology}</p>
+                           <p className="text-gray-500">Roll: {student.roll_number}</p>
+                           <p className="text-gray-400 text-[10px]">Session: {student.session}</p>
+                        </td>
+                         <td className="px-6 py-4 min-w-[150px]">
+                          <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                            <button 
+                              onClick={() => { setSelectedStudent(student); setModalMode('details'); }} 
+                              className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all" 
+                              title="View Details"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button 
+                              onClick={() => { setSelectedStudent(student); setModalMode('idcard'); }} 
+                              className="p-2 text-gov-green hover:bg-gov-green/5 rounded-lg transition-all" 
+                              title="Print ID Card"
+                            >
+                              <Printer size={18} />
+                            </button>
+                            <button onClick={() => deleteStudent(student.id)} className="p-2 text-gray-400 hover:text-red-500 transition-all" title="Delete"><Trash2 size={18} /></button>
+                          </div>
+                        </td>
+                     </tr>
+                   ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100">
+               {paginatedStudents.length === 0 ? (
+                 <div className="p-10 text-center text-slate-400 font-bengali">কোনো তথ্য পাওয়া যায়নি।</div>
+               ) : (
+                 paginatedStudents.map(student => (
+                   <div key={student.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                     <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0 shadow-sm">
+                           <img src={student.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
+                        </div>
+                        <div className="min-w-0">
+                           <div className="flex items-center gap-2">
+                             <h4 className="font-extrabold text-slate-800 text-sm truncate max-w-[120px] xs:max-w-[160px]">{student.full_name_en}</h4>
+                             {!student.is_downloaded && (
+                               <span className="bg-amber-500 text-white text-[8px] font-black px-1 py-0.5 rounded animate-pulse">NEW</span>
+                             )}
+                           </div>
+                           <p className="text-[11px] font-bold text-slate-400">Roll: {student.roll_number}</p>
+                        </div>
+                     </div>
+                     <button 
+                       onClick={() => { setSelectedStudent(student); setModalMode('details'); }}
+                       className="bg-gov-green text-white px-4 py-2 rounded-xl text-xs font-black font-bengali shadow-lg shadow-gov-green/10 whitespace-nowrap active:scale-95 transition-transform"
+                     >
+                        Details
+                     </button>
+                   </div>
+                 ))
+               )}
+            </div>
+          </>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && totalPages > 1 && (
+          <div className="px-6 py-4 bg-slate-50 border-t flex flex-wrap items-center justify-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => {
+                  setCurrentPage(page);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`min-w-[40px] h-10 px-3 rounded-lg text-sm font-bold transition-all border-2 ${
+                  currentPage === page 
+                    ? 'bg-gov-green border-gov-green text-white shadow-md' 
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-gov-green/50'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {selectedStudent && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setSelectedStudent(null); setModalMode(null); }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-4xl rounded-[32px] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gov-green/5 text-gov-green rounded-2xl flex items-center justify-center">
+                    {modalMode === 'details' ? <UserIcon size={24} /> : <Printer size={24} />}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold font-bengali">{modalMode === 'details' ? 'শিক্ষার্থীর তথ্য' : 'আইডি কার্ড প্রিভিউ'}</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{selectedStudent.full_name_en}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { setSelectedStudent(null); setModalMode(null); }}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-all"
+                >
+                  <X size={24} className="text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-8 md:p-12 overflow-y-auto">
+                {modalMode === 'details' ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="w-full max-w-[240px] aspect-square rounded-[40px] border-4 border-gov-green/10 overflow-hidden shadow-inner bg-slate-50">
+                        <img src={selectedStudent.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
+                      </div>
+                      <div className="w-full space-y-4">
+                         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                           <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">স্ট্যাটাস</p>
+                           <span className="bg-gov-green text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">Active Member</span>
+                         </div>
+                      </div>
+                    </div>
+                    
+                    <div className="lg:col-span-2 space-y-8">
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 md:gap-y-8">
+                          <DetailItem label="পুরো নাম (বাংলা)" value={selectedStudent.full_name_bn} font="bengali" />
+                          <DetailItem label="Full Name (English)" value={selectedStudent.full_name_en} />
+                          <DetailItem label="পিতার নাম" value={selectedStudent.father_name} font="bengali" />
+                          <DetailItem label="মাতার নাম" value={selectedStudent.mother_name} font="bengali" />
+                          <DetailItem label="রোল নম্বর" value={selectedStudent.roll_number} />
+                          <DetailItem label="রেজিস্ট্রেশন" value={selectedStudent.reg_number} />
+                          <DetailItem label="টেকনোলজি" value={selectedStudent.technology} font="bengali" />
+                          <DetailItem label="সেশন" value={selectedStudent.session} />
+                          <DetailItem label="সেমিস্টার" value={selectedStudent.semester} font="bengali" />
+                          <DetailItem label="শিফট" value={selectedStudent.shift} font="bengali" />
+                          <DetailItem label="মোবাইল নম্বর" value={selectedStudent.mobile} />
+                          <DetailItem label="অভিভাবকের মোবাইল" value={selectedStudent.guardian_mobile} />
+                          <DetailItem label="জন্ম তারিখ" value={selectedStudent.dob} />
+                          <DetailItem label="রক্তের গ্রুপ" value={selectedStudent.blood_group} />
+                       </div>
+                       <div className="pt-6 md:pt-8 border-t border-slate-100">
+                          <DetailItem label="স্থায়ী ঠিকানা" value={selectedStudent.address} font="bengali" fullWidth />
+                       </div>
+
+                       {/* Action Buttons for Mobile Accessibility */}
+                       <div className="pt-8 border-t border-slate-100 flex flex-wrap gap-4">
+                          <button 
+                            onClick={() => setModalMode('idcard')}
+                            className="flex-1 min-w-[140px] bg-gov-green text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-gov-green/20"
+                          >
+                            <Printer size={18} /> আইডি কার্ড প্রিন্ট
+                          </button>
+                          <button 
+                            onClick={() => deleteStudent(selectedStudent.id)}
+                            className="flex-1 min-w-[140px] bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                          >
+                            <Trash2 size={18} /> ডিলেট করুন
+                          </button>
+                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center -mt-6 md:-mt-10 scale-75 md:scale-90 lg:scale-100 transition-transform origin-top">
+                    <IDCard 
+                      user={selectedStudent as any} 
+                      onDownload={async () => {
+                        try {
+                          await safeFetch(`/api/admin/students/${selectedStudent.id}/downloaded`, { method: 'PATCH' });
+                          fetchStudents(); // Refresh student list
+                          // Also refresh stats implicitly if needed, or just let the user navigate
+                        } catch (e) {
+                          console.error('Mark as downloaded failed:', e);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DetailItem({ label, value, font, fullWidth }: { label: string, value?: string, font?: string, fullWidth?: boolean }) {
+  return (
+    <div className={fullWidth ? "col-span-full" : ""}>
+      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{label}</p>
+      <p className={`text-sm font-bold text-slate-800 ${font === 'bengali' ? 'font-bengali' : ''}`}>{value || 'N/A'}</p>
+    </div>
+  );
+}
+
+function StatsCard({ label, value, color }: { label: string, value: string, color: string }) {
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+       <div className={`${color} w-2 h-12 rounded-full`}></div>
+       <div>
+         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">{label}</p>
+         <p className="text-2xl font-bold">{value}</p>
+       </div>
+    </div>
+  );
+}

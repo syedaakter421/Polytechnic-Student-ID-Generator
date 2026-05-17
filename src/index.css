@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-bengali: "Hind Siliguri", sans-serif;
+  
+  --color-gov-green: #006a4e;
+  --color-gov-green-dark: #004d48;
+  --color-gov-red: #f42a41;
+  --color-bg-main: #f8fafc;
+
+  /* Force Hex for Slate to avoid oklch errors with html2canvas */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+
+  /* Force Hex for Gray */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Force Hex for Red */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+
+  /* Force Hex for Blue */
+  --color-blue-50: #eff6ff;
+  --color-blue-600: #2563eb;
+
+  /* Force Hex for Purple */
+  --color-purple-600: #9333ea;
+
+  /* Force Hex for Indigo */
+  --color-indigo-50: #eef2ff;
+
+  /* Force Hex for Zinc to avoid oklch/oklab errors */
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+}
+
+/* Fix for html2canvas oklab issues - Force standard color space if possible */
+* {
+  --tw-ring-color: rgba(59, 130, 246, 0.5);
+  --tw-ring-offset-color: #fff;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f0f2f5;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+body ::selection {
+  background-color: #006a4e;
+  color: white;
+}
+
+/* Base side backgrounds */
+body {
+  background-image: 
+    url('/images/bg_main_july.gif'),
+    url('/images/bg_main_july.gif');
+  background-repeat: repeat-y;
+  background-position: left top, right top;
+  background-attachment: fixed;
+  background-size: 1080px auto, 1080px auto;
+}
+
+/* Page specific background-size */
+body:has(.home-page) {
+  background-size: 1380px auto, 1380px auto;
+}
+body:has(.login-page) {
+  background-size: 1380px auto, 1380px auto;
+}
+body:has(.signup-page) {
+  background-size: 1380px auto, 1380px auto;
+}
+body:has(.admin-page), body:has(.student-page) {
+  background-size: 1380px auto, 1380px auto;
+}
+
+#root {
+  min-height: 100vh;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: white;
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.12);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(203, 213, 225, 0.4);
+  border-right: 1px solid rgba(203, 213, 225, 0.4);
+  overflow-x: hidden;
+  transition: all 0.3s ease;
+}
+
+
+
+.page-container {
+  background-color: transparent;
+}
+
+.font-bengali {
+  font-family: var(--font-bengali);
+}
