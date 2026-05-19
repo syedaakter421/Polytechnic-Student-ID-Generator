@@ -140,36 +140,35 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
               {user.full_name_en}
             </h2>
             
-            <div className="space-y-2 w-full">
-              <div className="text-[28px] flex items-center justify-center gap-2">
+            <div className="space-y-1 w-full text-[28px]">
+              <div className="flex items-center justify-center gap-2">
                 <span className="font-black">Technology :</span>
                 <span className="font-bold uppercase">{user.technology}</span>
               </div>
-              <div className="text-[28px] flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <span className="font-black">Roll No :</span>
                 <span className="font-bold">{user.roll_number}</span>
               </div>
-              <div className="text-[28px] flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <span className="font-black">Shift:</span>
                 <span className="font-bold">{user.shift || 'SHIFT'}</span>
               </div>
-
-              <div className="mt-4 flex flex-col items-center">
-                <span className="text-[24px] font-black mb-2">Semester:</span>
-                <div className="flex gap-1 flex-wrap justify-center">
-                  {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(sem => (
-                    <span 
-                      key={sem} 
-                      className={`border-2 border-[#002d3a] px-2.5 py-0.5 text-[18px] font-black transition-all
-                        ${user.semester === sem ? 'bg-[#002d3a] text-white scale-105' : 'bg-transparent text-[#002d3a]'}`}
-                    >
-                      {sem}
-                    </span>
-                  ))}
-                </div>
+              
+              <div className="flex items-center justify-center gap-2 -mb-1">
+                <span className="font-black">Semester:</span>
+              </div>
+              <div className="flex justify-center gap-1.5 py-2">
+                {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(sem => (
+                  <span 
+                    key={sem} 
+                    className="border-[2.5px] border-[#002d3a] w-[54px] h-[54px] flex items-center justify-center text-[18px] font-black"
+                  >
+                    {sem}
+                  </span>
+                ))}
               </div>
 
-              <div className="text-[28px] flex items-center justify-center gap-2 mt-2">
+              <div className="flex items-center justify-center gap-2">
                 <span className="font-black">Session:</span>
                 <span className="font-bold">{user.session}</span>
               </div>

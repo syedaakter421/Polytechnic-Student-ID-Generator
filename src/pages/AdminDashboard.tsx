@@ -558,24 +558,22 @@ function StudentManagement() {
           </div>
           <div className="mt-20 px-12 text-[#002d3a] flex flex-col items-center">
              <h2 className="text-[48px] font-black uppercase mb-4 tracking-wide">{student.full_name_en}</h2>
-             <div className="space-y-2 w-full text-[28px]">
+             <div className="space-y-1 w-full text-[28px]">
                <p className="flex justify-center gap-2"><span className="font-black">Technology :</span> <span className="font-bold uppercase">{student.technology}</span></p>
                <p className="flex justify-center gap-2"><span className="font-black">Roll No :</span> <span className="font-bold">{student.roll_number}</span></p>
                <p className="flex justify-center gap-2"><span className="font-black">Shift:</span> <span className="font-bold">{student.shift || 'SHIFT'}</span></p>
-               <div className="mt-4 flex flex-col items-center">
-                 <span className="text-[24px] font-black mb-2">Semester:</span>
-                 <div className="flex gap-1">
-                   {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(sem => (
-                     <span 
-                       key={sem} 
-                       className={`border-2 border-[#002d3a] px-2.5 py-0.5 text-[18px] font-black ${student.semester === sem ? 'bg-[#002d3a] text-white' : 'bg-transparent text-[#002d3a]'}`}
-                     >
-                       {sem}
-                     </span>
-                   ))}
-                 </div>
+               <p className="flex justify-center gap-2 -mb-1"><span className="font-black">Semester:</span></p>
+               <div className="flex justify-center gap-1.5 py-2">
+                 {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(sem => (
+                   <span 
+                     key={sem} 
+                     className="border-[2.5px] border-[#002d3a] w-[54px] h-[54px] flex items-center justify-center text-[18px] font-black"
+                   >
+                     {sem}
+                   </span>
+                 ))}
                </div>
-               <p className="flex justify-center gap-2 mt-2"><span className="font-black">Session:</span> <span className="font-bold">{student.session}</span></p>
+               <p className="flex justify-center gap-2 mt-1"><span className="font-black">Session:</span> <span className="font-bold">{student.session}</span></p>
              </div>
           </div>
           <div className="absolute bottom-16 left-0 w-full px-20 flex justify-between">

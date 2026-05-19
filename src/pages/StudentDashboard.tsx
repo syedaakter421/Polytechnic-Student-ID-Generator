@@ -304,23 +304,23 @@ function ProfilePage({ user, onUpdateUser }: { user: User, onUpdateUser: (user: 
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-2 h-8 bg-gov-green rounded-full"></div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 font-bengali">প্রোফাইল তথ্য</h2>
-            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Manage your account and profile information</p>
+            <h2 className="text-xl md:text-2xl font-black text-slate-800 font-bengali">প্রোফাইল তথ্য</h2>
+            <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Manage your account and profile information</p>
           </div>
         </div>
         {!isEditing ? (
           <button 
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 bg-white text-slate-700 px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all font-bengali"
+            className="flex items-center justify-center gap-2 bg-white text-slate-700 px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all font-bengali w-full sm:w-auto"
           >
             <Pencil size={16} /> তথ্য পরিবর্তন করুন
           </button>
         ) : (
-          <div className="flex gap-3">
+          <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
              <button 
               onClick={() => { 
                 setIsEditing(false); 
@@ -328,16 +328,16 @@ function ProfilePage({ user, onUpdateUser }: { user: User, onUpdateUser: (user: 
                 setPhotoPreview(user?.photo_path); 
                 setMessage(null);
               }}
-              className="flex items-center gap-2 bg-white text-slate-500 px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all font-bengali"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-slate-500 px-4 sm:px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all font-bengali"
             >
               <X size={16} /> বাতিল
             </button>
             <button 
               onClick={handleSave}
               disabled={loading}
-              className="flex items-center gap-2 bg-gov-green text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-gov-green/20 hover:-translate-y-0.5 transition-all font-bengali disabled:opacity-50"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gov-green text-white px-4 sm:px-8 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-gov-green/20 hover:-translate-y-0.5 transition-all font-bengali disabled:opacity-50"
             >
-              {loading ? 'সেভ হচ্ছে...' : <><Save size={16} /> সেভ করুন</>}
+              {loading ? 'সেভ...' : <><Save size={16} /> সেভ করুন</>}
             </button>
           </div>
         )}
@@ -539,6 +539,29 @@ function ProfilePage({ user, onUpdateUser }: { user: User, onUpdateUser: (user: 
                   textarea
                 />
               </div>
+
+              {isEditing && (
+                <div className="md:col-span-2 pt-8 flex gap-3 border-t border-slate-100">
+                  <button 
+                    onClick={() => { 
+                      setIsEditing(false); 
+                      if(user) setFormData({...user}); 
+                      setPhotoPreview(user?.photo_path); 
+                      setMessage(null);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-white text-slate-500 px-6 py-3 rounded-2xl font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all font-bengali"
+                  >
+                    <X size={18} /> বাতিল
+                  </button>
+                  <button 
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gov-green text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-gov-green/20 hover:-translate-y-0.5 transition-all font-bengali disabled:opacity-50"
+                  >
+                    {loading ? 'সেভ হচ্ছে...' : <><Save size={18} /> সেভ করুন</>}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -576,9 +599,6 @@ function ProfileField({ label, value, isEditing, onChange, font = 'sans', upperc
 }
 
 function DashboardHome({ user }: { user: User }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [academicInfo, setAcademicInfo] = useState('২০২৩-২৪ (৪র্থ সেমিস্টার)');
-
   return (
     <div className="space-y-12">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -586,27 +606,9 @@ function DashboardHome({ user }: { user: User }) {
           <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600 shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0"><Clock size={20} /></div>
           <div className="flex-1 min-w-0 relative">
             <div className="flex items-center justify-between mb-0.5">
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Current Academic</p>
-              <button 
-                onClick={() => setIsEditing(!isEditing)} 
-                className="text-slate-300 hover:text-gov-green transition-colors"
-                title="Edit Information"
-              >
-                {isEditing ? <Check size={14} /> : <Pencil size={12} />}
-              </button>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Session</p>
             </div>
-            {isEditing ? (
-              <input 
-                type="text" 
-                value={academicInfo} 
-                onChange={(e) => setAcademicInfo(e.target.value)}
-                onBlur={() => setIsEditing(false)}
-                autoFocus
-                className="w-full text-xs font-black font-bengali text-slate-800 bg-slate-50 border-b-2 border-gov-green outline-none py-0.5"
-              />
-            ) : (
-              <p className="text-sm font-black font-bengali text-slate-800 truncate" title={academicInfo}>{academicInfo}</p>
-            )}
+            <p className="text-sm font-black text-slate-800 truncate" title={user.session}>{user.session || 'N/A'}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-[30px] shadow-sm border border-slate-200 flex items-center gap-3 group hover:translate-y-1 transition-all">
