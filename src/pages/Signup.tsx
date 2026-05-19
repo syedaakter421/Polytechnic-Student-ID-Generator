@@ -5,12 +5,12 @@ import { motion } from 'motion/react';
 import { UserPlus, ArrowLeft, Upload, Camera, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 const DEPARTMENTS = [
-  'সিভিল টেকনোলজি',
-  'ইলেকট্রিক্যাল টেকনোলজি',
-  'ইলেকট্রনিক্স টেকনোলজি',
-  'কম্পিউটার টেকনোলজি',
-  'আরএসি টেকনোলজি',
-  'মেকানিক্যাল টেকনোলজি'
+'Civil Technology',
+'Electrical Technology',
+'Electronics Technology',
+'Computer Technology',
+'RAC Technology',
+'Mechanical Integrated Technology'
 ];
 
 export default function Signup() {
@@ -155,20 +155,20 @@ export default function Signup() {
               {[
                 { label: 'পূর্ণ নাম (বাংলায়)', name: 'full_name_bn', type: 'text', placeholder: 'যেমন: মো: সাকিল ইসলাম' },
                 { label: 'Full Name (English)', name: 'full_name_en', type: 'text', placeholder: 'e.g. Md. Sakil Islam' },
-                { label: 'রোল নম্বর (৬ ডিজিট)', name: 'roll_number', type: 'number', placeholder: 'যেমন: ১২৩৪৫৬' },
-                { label: 'রেজিস্ট্রেশন নম্বর (১০ ডিজিট)', name: 'reg_number', type: 'number', placeholder: 'যেমন: ১৫০০০১২৩৪৫' },
-                { label: 'সেশন', name: 'session', type: 'text', placeholder: 'যেমন: ২০২২-২৩' },
-                { label: 'পর্ব (সেমিস্টার)', name: 'semester', type: 'text', placeholder: 'যেমন: ৫ম' },
-                { label: 'শিফট', name: 'shift', type: 'text', placeholder: 'যেমন: ১ম/২য়' },
-                { label: 'রক্তের গ্রুপ', name: 'blood_group', type: 'text', placeholder: 'যেমন: AB+' },
-                { label: 'মোবাইল নম্বর', name: 'mobile', type: 'tel', placeholder: '০১৭...' },
+                { label: 'রোল নম্বর (ইংরেজি)', name: 'roll_number', type: 'number', placeholder: 'e.g. 123456 (6 digits)' },
+                { label: 'রেজিস্ট্রেশন নম্বর (ইংরেজি)', name: 'reg_number', type: 'number', placeholder: 'e.g. 1500012345 (10 digits)' },
+                { label: 'সেশন (ইংরেজি)', name: 'session', type: 'text', placeholder: 'e.g. 2022-23' },
+                { label: 'পর্ব (ইংরেজি)', name: 'semester', type: 'text', placeholder: 'e.g. 5th' },
+                { label: 'শিফট (ইংরেজি)', name: 'shift', type: 'text', placeholder: 'e.g. 1st/2nd' },
+                { label: 'রক্তের গ্রুপ (ইংরেজি)', name: 'blood_group', type: 'text', placeholder: 'e.g. AB+' },
+                { label: 'মোবাইল নম্বর (ইংরেজি)', name: 'mobile', type: 'tel', placeholder: '017...' },
                 { label: 'ইমেইল এড্রেস', name: 'email', type: 'email', placeholder: 'student@domain.com' },
-                { label: 'বাবার নাম', name: 'father_name', type: 'text', placeholder: 'যেমন: মো: আব্দুল আলীম' },
-                { label: 'মাতার নাম', name: 'mother_name', type: 'text', placeholder: 'যেমন: মোছা: খাতুন বেগম' },
-                { label: 'অভিভাবকের মোবাইল', name: 'guardian_mobile', type: 'tel', placeholder: '০১৭...' },
-                { label: 'জন্ম তারিখ', name: 'dob', type: 'date' },
-                { label: 'মেয়াদ উত্তীর্ণ (Valid Upto)', name: 'valid_upto', type: 'text', placeholder: 'যেমন: জুন ২০২৬' },
-                { label: 'পাসওয়ার্ড', name: 'password', type: 'password', placeholder: 'গোপন পাসওয়ার্ড লিখুন' },
+                { label: 'বাবার নাম (ইংরেজি)', name: 'father_name', type: 'text', placeholder: 'e.g. Md. Abdul Alim' },
+                { label: 'মাতার নাম (ইংরেজি)', name: 'mother_name', type: 'text', placeholder: 'e.g. Mst. Khatun Begum' },
+                { label: 'অভিভাবকের মোবাইল (ইংরেজি)', name: 'guardian_mobile', type: 'tel', placeholder: '017...' },
+                { label: 'জন্ম তারিখ (ইংরেজি)', name: 'dob', type: 'date' },
+                { label: 'মেয়াদ উত্তীর্ণ (ইংরেজি)', name: 'valid_upto', type: 'text', placeholder: 'e.g. June 2026' },
+                { label: 'পাসওয়ার্ড (ইংরেজি)', name: 'password', type: 'password', placeholder: 'Enter secret password' },
               ].map(field => (
                 <div key={field.name}>
                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">{field.label}</label>
@@ -198,26 +198,26 @@ export default function Signup() {
               ))}
 
               <div className="md:col-span-1">
-                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">টেকনোলজি/বিভাগ</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">টেকনোলজি/বিভাগ (ইংরেজি)</label>
                 <select 
                   required
                   value={formData.technology}
                   onChange={(e) => setFormData({ ...formData, technology: e.target.value })}
                   className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 focus:ring-4 focus:ring-gov-green/10 focus:border-gov-green focus:bg-white outline-none transition-all cursor-pointer"
                 >
-                  <option value="">নির্বাচন করুন</option>
+                  <option value="">Select Technology</option>
                   {DEPARTMENTS.map(dept => <option key={dept} value={dept}>{dept}</option>)}
                 </select>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">স্থায়ী ঠিকানা (সংক্ষেপে)</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">স্থায়ী ঠিকানা (সংক্ষেপে) (ইংরেজি)</label>
                 <textarea 
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 focus:ring-4 focus:ring-gov-green/10 focus:border-gov-green focus:bg-white outline-none transition-all h-20"
-                  placeholder="গ্রাম, ডাকঘর, উপজেলা, জেলা..."
+                  placeholder="Village, Post Office, Upazilla, District..."
                 />
               </div>
 
@@ -226,20 +226,20 @@ export default function Signup() {
                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-2 px-1">ঠিকানা বিস্তারিত (আইডি কার্ডের জন্য)</h4>
                  </div>
                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">গ্রাম (Village)</label>
-                   <input type="text" value={formData.village} onChange={(e) => setFormData({...formData, village: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="যেমন: ভাতশালা" required />
+                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">গ্রাম (ইংরেজি)</label>
+                   <input type="text" value={formData.village} onChange={(e) => setFormData({...formData, village: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="e.g. Bhatshala" required />
                  </div>
                   <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">ডাকঘর (Post Office)</label>
-                   <input type="text" value={formData.post_office} onChange={(e) => setFormData({...formData, post_office: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="যেমন: ভাতশালা" required />
+                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">ডাকঘর (ইংরেজি)</label>
+                   <input type="text" value={formData.post_office} onChange={(e) => setFormData({...formData, post_office: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="e.g. Bhatshala" required />
                  </div>
                   <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">উপজেলা (Upazilla)</label>
-                   <input type="text" value={formData.upazilla} onChange={(e) => setFormData({...formData, upazilla: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="যেমন: শেরপুর সদর" required />
+                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">উপজেলা (ইংরেজি)</label>
+                   <input type="text" value={formData.upazilla} onChange={(e) => setFormData({...formData, upazilla: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="e.g. Sherpur Sadar" required />
                  </div>
                   <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">জেলা (District)</label>
-                   <input type="text" value={formData.district} onChange={(e) => setFormData({...formData, district: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="যেমন: শেরপুর" required />
+                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">জেলা (ইংরেজি)</label>
+                   <input type="text" value={formData.district} onChange={(e) => setFormData({...formData, district: e.target.value})} className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 outline-none transition-all focus:ring-2 focus:ring-gov-green/20" placeholder="e.g. Sherpur" required />
                  </div>
               </div>
             </div>
