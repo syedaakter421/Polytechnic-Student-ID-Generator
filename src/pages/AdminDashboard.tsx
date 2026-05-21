@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Student, SystemSettings } from '../types';
-import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, Download, User as UserIcon, Menu } from 'lucide-react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import IDCard from '../components/IDCard';
 import html2canvas from 'html2canvas';
-import Footer from '../components/Footer';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
@@ -109,10 +108,10 @@ export default function AdminDashboard({ user, onLogout }: { user: User, onLogou
            <div className="flex items-center gap-2 md:gap-4 shrink-0">
               <div className="text-right hidden sm:block">
                 <span className="text-xs font-black text-slate-800 block">{user.full_name}</span>
-                <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Sherpur Polytechnic Institute</span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest block">Senior Administrator</span>
               </div>
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-white border border-slate-200 rounded-xl md:rounded-2xl flex items-center justify-center p-1 shadow-md"><img src="/images/logo.png" className="w-full h-full object-contain" alt="শেরপুর পলিটেকনিক ইনস্টিটিউট" referrerPolicy="no-referrer" /></div>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-xl md:rounded-2xl flex items-center justify-center font-black shadow-lg text-sm">SA</div>
                 <button 
                   onClick={handleLogout}
                   className="p-2 md:p-2.5 bg-red-50 text-red-600 rounded-lg md:rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group border border-red-100 hidden xs:block"
@@ -132,9 +131,6 @@ export default function AdminDashboard({ user, onLogout }: { user: User, onLogou
             <Route path="/profile" element={<AdminProfile user={user} />} />
             <Route path="*" element={<div className="p-10 md:p-20 text-center text-slate-400 font-bengali bg-white rounded-3xl border border-dashed border-slate-200">সেকশনটি শীঘ্রই আপডেট করা হবে।</div>} />
           </Routes>
-          <div className="-mx-4 md:-mx-6 lg:-mx-8 mt-10">
-            <Footer />
-          </div>
         </main>
       </div>
     </div>
@@ -147,19 +143,8 @@ function AdminProfile({ user }: { user: User }) {
     password: '',
     confirmPassword: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        full_name: user.full_name || ''
-      }));
-    }
-  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,42 +218,24 @@ function AdminProfile({ user }: { user: User }) {
 
           <div className="space-y-2 pt-4 border-t border-slate-100">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">New Password (Optional)</label>
-            <div className="relative">
-              <input 
-                type={showPassword ? "text" : "password"}
-                placeholder="Leave blank to keep current password"
-                value={formData.password}
-                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-4 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+            <input 
+              type="password"
+              placeholder="Leave blank to keep current password"
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
+            />
           </div>
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Confirm New Password</label>
-            <div className="relative">
-              <input 
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm your new password"
-                value={formData.confirmPassword}
-                onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full pl-4 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+            <input 
+              type="password"
+              placeholder="Confirm your new password"
+              value={formData.confirmPassword}
+              onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+              className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
+            />
           </div>
 
           <button 
@@ -378,7 +345,7 @@ function SettingsManagement() {
               </div>
             </div>
             <input type="hidden" name="id_card_template" value="sherpur" />
-            <input type="hidden" name="field_positions" value={settings?.field_positions || ''} />
+            <input type="hidden" name="field_positions" value={settings.field_positions || ''} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 pt-8 border-t border-slate-100">
@@ -470,24 +437,9 @@ function AdminHome() {
   return (
     <div className="space-y-6 md:space-y-10">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl flex flex-col gap-2 font-bengali text-sm shadow-sm">
-          <div className="flex items-center gap-3">
-             <X size={18} className="shrink-0" />
-             <span>{error.replace("AUTH_REQUIRED: ", "")}</span>
-          </div>
-          {error.includes("AUTH_REQUIRED") && (
-            <div className="mt-1 pl-7 flex flex-col gap-2 items-start">
-              <span className="text-xs text-slate-500">ব্রাউজারের কুকি ব্লক করার কারণে যদি কন্টেন্ট লোড না হয়, তাহলে সাইটটি নতুন উইন্ডোতে ওপেন করুন:</span>
-              <a 
-                href={window.location.host === 'localhost:3000' ? '/' : window.location.origin} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="bg-gov-green hover:bg-gov-green/90 text-white text-xs px-3 py-1.5 rounded-lg font-black"
-              >
-                নতুন উইন্ডোতে খুলুন ↗
-              </a>
-            </div>
-          )}
+        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl flex items-center gap-3 font-bengali text-sm">
+          <X size={18} className="shrink-0" />
+          {error}
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
@@ -903,7 +855,7 @@ function StudentManagement() {
                         <td className="px-6 py-6 min-w-[280px]">
                            <div className="flex items-center gap-4">
                              <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border shrink-0">
-                               <img src={student.photo_path || '/images/logo.png'} className="w-full h-full object-cover" alt="" />
+                               <img src={student.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
                              </div>
                              <div className="whitespace-nowrap">
                                <div className="flex items-center gap-2">
@@ -955,7 +907,7 @@ function StudentManagement() {
                    <div key={student.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
                      <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0 shadow-sm">
-                           <img src={student.photo_path || '/images/logo.png'} className="w-full h-full object-cover" alt="" />
+                           <img src={student.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
                         </div>
                         <div className="min-w-0">
                            <div className="flex items-center gap-2">
@@ -1042,7 +994,7 @@ function StudentManagement() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
                     <div className="flex flex-col items-center gap-6">
                       <div className="w-full max-w-[240px] aspect-square rounded-[40px] border-4 border-gov-green/10 overflow-hidden shadow-inner bg-slate-50">
-                        <img src={selectedStudent.photo_path || '/images/logo.png'} className="w-full h-full object-cover" alt="" />
+                        <img src={selectedStudent.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
                       </div>
                       <div className="w-full space-y-4">
                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">

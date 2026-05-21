@@ -120,24 +120,9 @@ export default function Login({ onLogin }: { onLogin: (user: UserType, token: st
             </div>
 
             {error && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-gov-red text-[13px] font-bold font-bengali bg-gov-red/5 p-4 rounded-xl border border-gov-red/10 flex flex-col gap-3">
-                <div className="flex gap-2 items-center">
-                  <span className="w-5 h-5 bg-gov-red text-white text-[10px] rounded-full flex items-center justify-center font-black shrink-0">!</span>
-                  <span>{error.replace("AUTH_REQUIRED: ", "")}</span>
-                </div>
-                {error.includes("AUTH_REQUIRED") && (
-                  <div className="mt-1 pl-7 flex flex-col gap-2 items-start">
-                    <span className="text-xs text-slate-500 font-normal">ব্রাউজারের থার্ড-পার্টি কুকি ব্লক করার কারণে যদি সমস্যা হয়, তাহলে নিচের লিংকে ক্লিক করে নতুন উইন্ডোতে যান:</span>
-                    <a 
-                      href={window.location.host === 'localhost:3000' ? '/' : window.location.origin} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="bg-gov-green hover:bg-gov-green/90 text-white text-xs px-3 py-1.5 rounded-lg shadow-sm font-black flex items-center gap-1 transition-all"
-                    >
-                      নতুন উইন্ডোতে খুলুন ↗
-                    </a>
-                  </div>
-                )}
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-gov-red text-[13px] font-bold font-bengali bg-gov-red/5 p-4 rounded-xl border border-gov-red/10 flex gap-2 items-center">
+                <span className="w-5 h-5 bg-gov-red text-white text-[10px] rounded-full flex items-center justify-center font-black">!</span>
+                {error}
               </motion.div>
             )}
 

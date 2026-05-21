@@ -144,7 +144,7 @@ export default function StudentDashboard({ user, onLogout, onUpdateUser }: { use
                  <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Roll: {user.roll_number}</p>
                </div>
                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl border-2 border-gov-green/20 overflow-hidden shadow-inner bg-slate-100">
-                 <img src={user.photo_path || '/images/logo.png'} className="w-full h-full object-cover" alt="" />
+                 <img src={user.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
                </div>
             </div>
           </div>
@@ -355,7 +355,7 @@ function ProfilePage({ user, onUpdateUser }: { user: User, onUpdateUser: (user: 
           <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 flex flex-col items-center text-center">
             <div className="relative group">
               <div className="w-40 h-40 rounded-[2.5rem] border-4 border-gov-green/10 overflow-hidden shadow-inner bg-slate-50">
-                <img src={photoPreview || '/images/logo.png'} className="w-full h-full object-cover" alt="" />
+                <img src={photoPreview || '/default-user.png'} className="w-full h-full object-cover" alt="" />
               </div>
               {isEditing && (
                 <label className="absolute bottom-2 right-2 bg-gov-green text-white p-2.5 rounded-2xl shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all">

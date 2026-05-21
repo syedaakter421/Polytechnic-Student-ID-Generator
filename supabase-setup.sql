@@ -75,7 +75,3 @@ CREATE POLICY "Enable all for settings" ON public.settings FOR ALL USING (true);
 -- Admins Policies
 CREATE POLICY "Enable all for admins" ON public.admins FOR ALL USING (true);
 
--- Add photo_path column to admins table if it doesn't exist
-ALTER TABLE public.admins ADD COLUMN IF NOT EXISTS photo_path TEXT;
-
-

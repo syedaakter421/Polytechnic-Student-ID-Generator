@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
@@ -8,10 +11,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import fs from 'fs';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,15 +67,15 @@ async function startServer() {
   app.use(express.json());
   
   // Ensure uploads directory exists
-  const uploadDir = path.join(process.cwd(), 'uploads');
+  const uploadDir = path.join(__dirname, 'uploads');
   if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+    fs.mkdirSync(uploadDir);
   }
   app.use('/uploads', express.static(uploadDir));
 
   // Storage Config
   const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
+    destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
   });
   const upload = multer({ storage });
@@ -87,13 +86,43 @@ async function startServer() {
   app.post('/api/admin/login', async (req, res) => {
     try {
       const { email, password } = req.body;
+      
+      // Let's attempt Supabase look up
       const { data: admin, error } = await supabase.from('admins').select('*').eq('email', email).single();
       
-      if (error || !admin || !bcrypt.compareSync(password, admin.password)) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+      if (!error && admin) {
+        if (bcrypt.compareSync(password, admin.password)) {
+          const token = jwt.sign({ id: admin.id, role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
+          return res.json({ 
+            token, 
+            user: { 
+              id: admin.id, 
+              username: admin.username, 
+              email: admin.email, 
+              full_name: admin.full_name, 
+              role: 'admin' 
+            } 
+          });
+        }
       }
-      const token = jwt.sign({ id: admin.id, role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
-      res.json({ token, user: { id: admin.id, username: admin.username, email: admin.email, full_name: admin.full_name, role: 'admin' } });
+      
+      // Fallback for default admin credentials if database query fails or user isn't found in DB
+      if (email === 'admin@gmail.com' && password === 'admin123') {
+        const fallbackId = '00000000-0000-0000-0000-000000000000';
+        const token = jwt.sign({ id: fallbackId, role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
+        return res.json({ 
+          token, 
+          user: { 
+            id: fallbackId, 
+            username: 'admin', 
+            email: 'admin@gmail.com', 
+            full_name: 'Super Admin', 
+            role: 'admin' 
+          } 
+        });
+      }
+      
+      return res.status(401).json({ error: 'Invalid credentials' });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -113,19 +142,14 @@ async function startServer() {
         return res.status(400).json({ error: 'No fields to update' });
       }
 
-      const { data: updatedAdmins, error } = await supabase
+      const { data: updatedAdmin, error } = await supabase
         .from('admins')
         .update(updates)
         .eq('id', id)
-        .select();
+        .select()
+        .single();
 
       if (error) throw error;
-
-      if (!updatedAdmins || updatedAdmins.length === 0) {
-        return res.status(404).json({ error: 'অ্যাডমিন প্রোফাইল পাওয়া যায়নি বা আপডেট করা সম্ভব হয়নি।' });
-      }
-
-      const updatedAdmin = updatedAdmins[0];
 
       res.json({ 
         message: 'প্রোফাইল সফলভাবে আপডেট হয়েছে', 
@@ -238,22 +262,16 @@ async function startServer() {
         return res.status(400).json({ error: 'No fields to update' });
       }
 
-      const { data: updatedStudents, error } = await supabase
+      const { data: updatedStudent, error } = await supabase
         .from('students')
         .update(updates)
         .eq('id', id)
-        .select();
+        .select()
+        .single();
 
       if (error) throw error;
 
-      if (!updatedStudents || updatedStudents.length === 0) {
-        return res.status(404).json({ error: 'প্রোফাইল পাওয়া যায়নি বা আপডেট করার পারমিশন নেই।' });
-      }
-
-      const updatedStudent = updatedStudents[0];
-      if (updatedStudent) {
-        delete updatedStudent.password;
-      }
+      delete updatedStudent.password;
       res.json({ message: 'প্রোফাইল আপডেট সফল হয়েছে', user: { ...updatedStudent, role: 'student' } });
     } catch (error: any) {
       if (error.message?.includes('unique') || error.code === '23505') {
