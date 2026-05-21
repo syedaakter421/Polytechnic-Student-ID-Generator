@@ -72,10 +72,12 @@ export default function Signup() {
         method: 'POST',
         body: form
       });
+      
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Signup error:', err);
+      setError(err.message || 'নিবন্ধন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
     }
@@ -198,7 +200,7 @@ export default function Signup() {
               ))}
 
               <div className="md:col-span-1">
-                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">টেকনোলজি/বিভাগ (ইংরেজি)</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">টেকনোলজি/বিভাগ</label>
                 <select 
                   required
                   value={formData.technology}
@@ -245,9 +247,24 @@ export default function Signup() {
             </div>
 
             {error && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-gov-red text-[13px] font-bold font-bengali bg-gov-red/5 p-4 rounded-xl border border-gov-red/10 flex gap-2 items-center">
-                <span className="w-5 h-5 bg-gov-red text-white text-[10px] rounded-full flex items-center justify-center font-black">!</span>
-                {error}
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-gov-red text-[13px] font-bold font-bengali bg-gov-red/5 p-4 rounded-xl border border-gov-red/10 flex flex-col gap-3">
+                <div className="flex gap-2 items-center">
+                  <span className="w-5 h-5 bg-gov-red text-white text-[10px] rounded-full flex items-center justify-center font-black shrink-0">!</span>
+                  <span>{error.replace("AUTH_REQUIRED: ", "")}</span>
+                </div>
+                {error.includes("AUTH_REQUIRED") && (
+                  <div className="mt-1 pl-7 flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    <span className="text-xs text-slate-500 font-normal">ব্রাউজারের থার্ড-পার্টি কুকি ব্লকিং এড়িয়ে যেতে আপনি সাইটটি নতুন উইন্ডোতে ওপেন করতে পারেন:</span>
+                    <a 
+                      href={window.location.host === 'localhost:3000' ? '/' : window.location.origin} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="bg-gov-green hover:bg-gov-green/90 text-white text-xs px-3 py-1.5 rounded-lg shadow-sm font-black flex items-center gap-1 transition-all"
+                    >
+                      নতুন উইন্ডোতে খুলুন ↗
+                    </a>
+                  </div>
+                )}
               </motion.div>
             )}
 

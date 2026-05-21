@@ -2,10 +2,18 @@
 export async function safeFetch(url: string, options?: RequestInit) {
   let attempts = 0;
   const maxAttempts = (options?.method || 'GET') === 'GET' ? 2 : 1;
+  const timeout = 30000; // 30 seconds
 
   while (attempts < maxAttempts) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
@@ -24,6 +32,11 @@ export async function safeFetch(url: string, options?: RequestInit) {
       return data;
     } catch (error: any) {
       attempts++;
+      
+      if (error.name === 'AbortError') {
+        throw new Error("সার্ভার থেকে উত্তর পেতে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+      }
+
       if (error.message === "Failed to fetch" && attempts < maxAttempts) {
         // Wait a bit before retrying
         await new Promise(resolve => setTimeout(resolve, 500));
