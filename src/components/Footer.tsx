@@ -13,14 +13,14 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-10 pb-12 pt-6 relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-10">
             <div className="text-xs text-slate-600 space-y-2 font-bengali text-center md:text-left">
-              <p className="font-bold">© ২০২৪ শেরপুর পলিটেকনিক ইনস্টিটিউট। সকল স্বত্ব সংরক্ষিত।</p>
+              <p className="font-bold">© ২০২৪ শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউট। সকল স্বত্ব সংরক্ষিত।</p>
               <p className="opacity-80">সাইটটি সর্বশেষ হাল-নাগাদ করা হয়েছে: রবিবার, ১০ মে, ২০২৬ এ ২০:৫৪:২৩</p>
             </div>
             
             <div className="flex flex-col items-center md:items-end gap-6 text-center md:text-right">
                <div className="flex flex-col items-center md:items-end">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mb-1 border-b border-slate-300 pb-1">Planning & Implementation</p>
-                  <p className="text-xs font-bold text-slate-700 font-bengali">কারিগরি শাখা, শেরপুর পলিটেকনিক ইনস্টিটিউট</p>
+                  <p className="text-xs font-bold text-slate-700 font-bengali">কারিগরি শাখা, শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউট</p>
                </div>
                
                <div className="flex flex-col sm:flex-row items-center gap-4">

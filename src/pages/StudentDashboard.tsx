@@ -52,7 +52,7 @@ export default function StudentDashboard({ user, onLogout, onUpdateUser }: { use
                  <img src="/images/logo.png" className="w-full h-full object-contain" alt="Logo" />
                </div>
                <div>
-                 <h2 className="font-black text-slate-800 text-[11px] uppercase leading-tight">Sherpur Polytechnic Institute</h2>
+                 <h2 className="font-black text-slate-800 text-[11px] uppercase leading-tight">Sherpur Govt. Polytechnic Institute</h2>
                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Digital Student Portal</p>
                </div>
             </div>

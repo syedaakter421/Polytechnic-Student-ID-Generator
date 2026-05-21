@@ -112,7 +112,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
             </div>
             <div className="w-full bg-[#004d61] py-3">
               <h1 className="text-[28px] font-black text-white uppercase tracking-tight">
-                SHERPUR POLYTECHNIC INSTITUTE, SHERPUR
+                SHERPUR GOVT. POLYTECHNIC INSTITUTE, SHERPUR
               </h1>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
           
           <div className="relative z-10 flex flex-col h-full">
             <div className="bg-[#00a0be] text-white py-3 mt-[40px]">
-              <h2 className="text-[26px] font-black text-center uppercase tracking-tight">SHERPUR POLYTECHNIC INSTITUTE, SHERPUR.</h2>
+              <h2 className="text-[26px] font-black text-center uppercase tracking-tight">SHERPUR GOVT. POLYTECHNIC INSTITUTE, SHERPUR.</h2>
             </div>
 
             <div className="px-12 pt-12 pb-6 h-full flex flex-col items-center">
@@ -275,7 +275,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
               <div className="absolute bottom-8 left-0 w-full flex justify-center">
                  <div className="bg-[#00a0be] text-white p-6 w-[90%] rounded-2xl shadow-xl flex flex-col items-center text-center">
                     <p className="text-[18px] font-black uppercase mb-3">If found please return to</p>
-                    <h3 className="text-[26px] font-black uppercase mb-2 leading-tight">SHERPUR POLYTECHNIC INSTITUTE</h3>
+                    <h3 className="text-[26px] font-black uppercase mb-2 leading-tight">SHERPUR GOVT. POLYTECHNIC INSTITUTE</h3>
                     <p className="text-[18px] font-bold mb-1">Bhatshala, Sherpur-2100,</p>
                     <p className="text-[18px] font-bold mb-3">Contact : 01309136071</p>
                     <div className="border-t border-white/30 pt-3 w-full">

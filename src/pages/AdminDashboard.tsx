@@ -571,7 +571,7 @@ function StudentManagement() {
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(20);
-    doc.text('Sherpur Polytechnic Institute - Student List', 15, 15);
+    doc.text('Sherpur Govt. Polytechnic Institute - Student List', 15, 15);
     doc.setFontSize(10);
     doc.text(`Exported on: ${new Date().toLocaleString()}`, 15, 22);
 
@@ -658,7 +658,7 @@ function StudentManagement() {
               />
             </div>
             <div className="w-full bg-[#004d61] py-3">
-              <h1 className="text-[28px] font-black text-white uppercase tracking-tight">SHERPUR POLYTECHNIC INSTITUTE, SHERPUR</h1>
+              <h1 className="text-[28px] font-black text-white uppercase tracking-tight">SHERPUR GOVT. POLYTECHNIC INSTITUTE, SHERPUR</h1>
             </div>
           </div>
           <div className="h-[320px] bg-[#dff3f6] [clip-path:ellipse(80%_100%_at_50%_0%)] flex justify-center">
@@ -715,7 +715,7 @@ function StudentManagement() {
     <div ref={batchBackRef} className="w-[791px] h-[1169px] bg-white rounded-[24px] border border-slate-300 relative overflow-hidden flex flex-col shrink-0 font-sans">
         <div className="relative h-full w-full bg-white flex flex-col">
             <div className="h-[40px] bg-[#FFBC0D]"></div>
-            <div className="bg-[#00a0be] text-white py-3 mt-[40px] text-center font-black text-[26px]">SHERPUR POLYTECHNIC INSTITUTE, SHERPUR.</div>
+            <div className="bg-[#00a0be] text-white py-3 mt-[40px] text-center font-black text-[26px]">SHERPUR GOVT. POLYTECHNIC INSTITUTE, SHERPUR.</div>
             <div className="p-12 h-full flex flex-col items-center">
                <div className="flex items-center bg-slate-100 px-6 py-3 rounded-xl border-2 border-slate-200 shadow-inner mb-8">
                   <span className="text-[24px] font-black text-slate-800 mr-4">Valid Upto : </span>
@@ -744,7 +744,7 @@ function StudentManagement() {
                <div className="absolute bottom-8 left-0 w-full flex justify-center">
                   <div className="bg-[#00a0be] text-white p-6 w-[90%] rounded-2xl text-center shadow-xl">
                      <p className="text-[18px] font-black uppercase mb-2 leading-none">If found please return to</p>
-                     <h3 className="text-[26px] font-black uppercase mb-1">SHERPUR POLYTECHNIC INSTITUTE</h3>
+                     <h3 className="text-[26px] font-black uppercase mb-1">SHERPUR GOVT. POLYTECHNIC INSTITUTE</h3>
                      <p className="text-[18px] font-bold mb-3">Bhatshala, Sherpur-2100, Contact: 01309136071</p>
                      <div className="border-t border-white/30 pt-3">
                         <p className="text-[16px] font-black tracking-widest">web: https://sherpur.polytech.gov.bd</p>
