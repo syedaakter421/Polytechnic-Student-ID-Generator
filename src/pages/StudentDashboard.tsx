@@ -11,9 +11,72 @@ export default function StudentDashboard({ user, onLogout, onUpdateUser }: { use
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([
-    { id: 1, title: 'রেজিস্ট্রেশন সফল', message: 'আপনার আইডি কার্ড রেজিস্ট্রেশন সফলভাবে সম্পন্ন হয়েছে।', time: '২ ঘণ্টা আগে', read: false },
-    { id: 2, title: 'নতুন নোটিশ', message: 'আগামীকাল ইনস্টিটিউট বন্ধ থাকবে।', time: '১ দিন আগে', read: true },
+    { id: 1, title: 'রেজিস্ট্রেশন সফল', message: 'আপনার আইডি কার্ড রেজিস্ট্রেশন সফলভাবে সম্পন্ন হয়েছে।', time: '', read: false },
   ]);
+
+  useEffect(() => {
+    if (!user || !user.status) return;
+    const statusVal = user.status;
+    let statusNotif = null;
+
+    if (statusVal === 'printed') {
+      statusNotif = {
+        id: 99,
+        title: 'আইডি কার্ড প্রিন্ট সম্পন্ন',
+        message: 'আপনার আইডি কার্ডটি সফলভাবে প্রিন্ট করা হয়েছে। অনুগ্রহ করে সংশ্লিষ্ট কার্যালয় হতে আপনার আইডি কার্ডটি সংগ্রহ করুন।',
+        time: 'এখন',
+        read: false
+      };
+    } else if (statusVal === 'processing') {
+      statusNotif = {
+        id: 99,
+        title: 'আইডি কার্ড প্রস্তুত করা হচ্ছে',
+        message: 'আপনার আইডি কার্ডটি প্রিন্ট করার কাজ প্রক্রিয়াধীন (Processing) রয়েছে।',
+        time: 'এখন',
+        read: false
+      };
+    } else if (statusVal === 'approved') {
+      statusNotif = {
+        id: 99,
+        title: 'আবেদন অনুমোদিত',
+        message: 'বিজ্ঞপ্তি: আপনার আইডি কার্ডের আবেদন সফলভাবে অনুমোদিত হয়েছে।',
+        time: 'এখন',
+        read: false
+      };
+    } else if (statusVal === 'rejected') {
+      statusNotif = {
+        id: 99,
+        title: 'আবেদন প্রত্যাখ্যাত',
+        message: 'দুঃখিত, আপনার দেওয়া তথ্যের সংশোধন প্রয়োজন বা আবেদনটি প্রত্যাখ্যাত হয়েছে। অনুগ্রহ করে অফিসে যোগাযোগ করুন।',
+        time: 'এখন',
+        read: false
+      };
+    } else {
+      statusNotif = {
+        id: 99,
+        title: 'আবেদন প্রক্রিয়াধীন',
+        message: 'আপনার আইডি কার্ড আবেদনটি বর্তমানে অপেক্ষমান (Pending) আছে এবং পর্যালোচনা করা হচ্ছে।',
+        time: 'এখন',
+        read: false
+      };
+    }
+
+    setNotifications(prev => {
+      const filtered = prev.filter(n => n.id !== 99);
+      const regSuccess = filtered.find(n => n.id === 1);
+      const others = filtered.filter(n => n.id !== 1);
+      
+      const newNotifs = [];
+      if (regSuccess) {
+        newNotifs.push(regSuccess);
+      }
+      if (statusNotif) {
+        newNotifs.push(statusNotif);
+      }
+      newNotifs.push(...others);
+      return newNotifs;
+    });
+  }, [user.status]);
 
   const handleLogout = () => {
     onLogout();
@@ -123,7 +186,9 @@ export default function StudentDashboard({ user, onLogout, onUpdateUser }: { use
                             <div className="pl-2">
                               <p className="text-xs font-bold text-slate-800 font-bengali mb-1">{notification.title}</p>
                               <p className="text-[11px] text-slate-500 font-bengali leading-relaxed">{notification.message}</p>
-                              <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase">{notification.time}</p>
+                              {notification.time && (
+                                <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase">{notification.time}</p>
+                              )}
                             </div>
                           </div>
                         ))
@@ -383,7 +448,9 @@ function ProfilePage({ user, onUpdateUser }: { user: User, onUpdateUser: (user: 
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">যোগদানের তারিখ</span>
-                <span className="text-white text-[10px] font-black uppercase">May 2024</span>
+                <span className="text-white text-[10px] font-black font-bengali uppercase">
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
+                </span>
               </div>
             </div>
           </div>
@@ -614,8 +681,28 @@ function DashboardHome({ user }: { user: User }) {
         <div className="bg-white p-5 rounded-[30px] shadow-sm border border-slate-200 flex items-center gap-3 group hover:translate-y-1 transition-all">
           <div className="bg-gov-green/5 p-2.5 rounded-xl text-gov-green shadow-inner group-hover:bg-gov-green group-hover:text-white transition-all shrink-0"><Bell size={20} /></div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Registration Status</p>
-            <p className="text-sm font-black font-bengali text-gov-green uppercase truncate">অনুমোদিত (Verified)</p>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">ID Card Status</p>
+            {(() => {
+              const statusVal = user.status || 'pending';
+              let text = 'অপেক্ষমান (Pending)';
+              let colorClass = 'text-amber-500';
+              if (statusVal === 'approved') {
+                text = 'অনুমোদিত (Verified)';
+                colorClass = 'text-gov-green';
+              } else if (statusVal === 'processing') {
+                text = 'প্রসেসিং (Processing)';
+                colorClass = 'text-blue-500';
+              } else if (statusVal === 'printed') {
+                text = 'প্রিন্টেড (Printed)';
+                colorClass = 'text-purple-600';
+              } else if (statusVal === 'rejected') {
+                text = 'প্রত্যাখ্যাত (Rejected)';
+                colorClass = 'text-red-500';
+              }
+              return (
+                <p className={`text-sm font-black font-bengali ${colorClass} uppercase truncate`}>{text}</p>
+              );
+            })()}
           </div>
         </div>
         <div className="bg-white p-5 rounded-[30px] shadow-sm border border-slate-200 flex items-center gap-3 group hover:translate-y-1 transition-all">

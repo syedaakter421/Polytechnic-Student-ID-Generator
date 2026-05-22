@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Student, SystemSettings } from '../types';
-import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, Download, User as UserIcon, Menu } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu, AlertTriangle } from 'lucide-react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import IDCard from '../components/IDCard';
 import html2canvas from 'html2canvas';
@@ -11,6 +11,7 @@ import { safeFetch } from '../lib/fetchUtils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toPng } from 'html-to-image';
+import Footer from '../components/Footer';
 
 export default function AdminDashboard({ user, onLogout }: { user: User, onLogout: () => void }) {
   const navigate = useNavigate();
@@ -108,10 +109,12 @@ export default function AdminDashboard({ user, onLogout }: { user: User, onLogou
            <div className="flex items-center gap-2 md:gap-4 shrink-0">
               <div className="text-right hidden sm:block">
                 <span className="text-xs font-black text-slate-800 block">{user.full_name}</span>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest block">Senior Administrator</span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest block">SHERPUR GOVT. POLYTECHNIC INSTITUTE</span>
               </div>
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-xl md:rounded-2xl flex items-center justify-center font-black shadow-lg text-sm">SA</div>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-white border border-slate-200 rounded-xl md:rounded-2xl flex items-center justify-center p-1 shadow-md">
+                   <img src="/images/logo.png" className="w-full h-full object-contain" alt="Logo" referrerPolicy="no-referrer" />
+                </div>
                 <button 
                   onClick={handleLogout}
                   className="p-2 md:p-2.5 bg-red-50 text-red-600 rounded-lg md:rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group border border-red-100 hidden xs:block"
@@ -132,6 +135,7 @@ export default function AdminDashboard({ user, onLogout }: { user: User, onLogou
             <Route path="*" element={<div className="p-10 md:p-20 text-center text-slate-400 font-bengali bg-white rounded-3xl border border-dashed border-slate-200">সেকশনটি শীঘ্রই আপডেট করা হবে।</div>} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </div>
   );
@@ -145,6 +149,8 @@ function AdminProfile({ user }: { user: User }) {
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,24 +224,42 @@ function AdminProfile({ user }: { user: User }) {
 
           <div className="space-y-2 pt-4 border-t border-slate-100">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">New Password (Optional)</label>
-            <input 
-              type="password"
-              placeholder="Leave blank to keep current password"
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
-            />
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"}
+                placeholder="Leave blank to keep current password"
+                value={formData.password}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                className="w-full pl-4 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Confirm New Password</label>
-            <input 
-              type="password"
-              placeholder="Confirm your new password"
-              value={formData.confirmPassword}
-              onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
-            />
+            <div className="relative">
+              <input 
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your new password"
+                value={formData.confirmPassword}
+                onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+                className="w-full pl-4 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gov-green/20 transition-all font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button 
@@ -488,8 +512,12 @@ function StudentManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sessionFilter, setSessionFilter] = useState('');
   const [techFilter, setTechFilter] = useState('');
+  const [downloadFilter, setDownloadFilter] = useState<'all' | 'new' | 'downloaded'>('all');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [modalMode, setModalMode] = useState<'details' | 'idcard' | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 30;
 
@@ -532,14 +560,48 @@ function StudentManagement() {
     }
   };
 
-  const deleteStudent = async (id: number) => {
-    if (!confirm('Are you sure?')) return;
+  const bulkUpdateStatus = async (status: string) => {
+    if (selectedStudentIds.length === 0) return;
     try {
-      await safeFetch(`/api/admin/students/${id}`, { method: 'DELETE' });
+      setLoading(true);
+      await Promise.all(selectedStudentIds.map(id => 
+        safeFetch(`/api/admin/students/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        })
+      ));
+      setSelectedStudentIds([]);
+      fetchStudents();
+    } catch (err: any) {
+      console.error('Bulk update status error:', err);
+      alert('স্ট্যাটাস আপডেট ব্যর্থ হয়েছে: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteStudent = (id: any) => {
+    const student = students.find(s => s.id === id);
+    if (student) {
+      setStudentToDelete(student);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!studentToDelete) return;
+    setIsDeleting(true);
+    try {
+      await safeFetch(`/api/admin/students/${studentToDelete.id}`, { method: 'DELETE' });
+      setStudentToDelete(null);
+      setSelectedStudent(null);
+      setModalMode(null);
       fetchStudents();
     } catch (err: any) {
       console.error('Delete student error:', err);
       alert('ডিলিট করতে সমস্যা হয়েছে: ' + err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -549,7 +611,10 @@ function StudentManagement() {
                           s.roll_number.includes(searchTerm);
       const matchesSession = !sessionFilter || s.session === sessionFilter;
       const matchesTech = !techFilter || s.technology === techFilter;
-      return matchesSearch && matchesSession && matchesTech;
+      const matchesDownload = downloadFilter === 'all' || 
+                              (downloadFilter === 'new' && !s.is_downloaded) || 
+                              (downloadFilter === 'downloaded' && s.is_downloaded);
+      return matchesSearch && matchesSession && matchesTech && matchesDownload;
     })
     .sort((a, b) => {
       if (a.is_downloaded !== b.is_downloaded) {
@@ -566,7 +631,7 @@ function StudentManagement() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sessionFilter, techFilter]);
+  }, [searchTerm, sessionFilter, techFilter, downloadFilter]);
 
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
@@ -597,44 +662,58 @@ function StudentManagement() {
   };
 
   const exportToZIP = async () => {
-    const newStudents = filtered.filter(s => !s.is_downloaded);
-    if (newStudents.length === 0) {
-      alert('নতুন কোনো স্টুডেন্ট নেই।');
+    const studentsToExport = filtered;
+    if (studentsToExport.length === 0) {
+      alert('ডাউনলোড করার মতো কোনো শিক্ষার্থী পাওয়া যায়নি।');
       return;
     }
 
-    if (!confirm(`${newStudents.length} জন নতুন শিক্ষার্থীর আইডি কার্ড জিপ ফাইলে ডাউনলোড হবে। অবিরত রাখতে চান?`)) return;
+    if (!confirm(`${studentsToExport.length} জন শিক্ষার্থীর আইডি কার্ড জিপ ফাইলে ডাউনলোড হবে। অবিরত রাখতে চান?`)) return;
 
     setIsZipping(true);
     setZipProgress(0);
     const zip = new JSZip();
     const options = { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' };
+    let successCount = 0;
 
     try {
       await (document as any).fonts.ready;
       
-      for (let i = 0; i < newStudents.length; i++) {
-        const student = newStudents[i];
+      for (let i = 0; i < studentsToExport.length; i++) {
+        const student = studentsToExport[i];
         setProcessingStudent(student);
-        setZipProgress(Math.round(((i) / newStudents.length) * 100));
+        setZipProgress(Math.round((i / studentsToExport.length) * 100));
         
         // Wait for rendering & images
         await new Promise(r => setTimeout(r, 800));
         
-        if (batchFrontRef.current && batchBackRef.current) {
-          const frontData = await toPng(batchFrontRef.current, options);
-          const backData = await toPng(batchBackRef.current, options);
-          
-          zip.file(`${student.roll_number}_FRONT.png`, frontData.split(',')[1], { base64: true });
-          zip.file(`${student.roll_number}_BACK.png`, backData.split(',')[1], { base64: true });
-          
-          await safeFetch(`/api/admin/students/${student.id}/downloaded`, { method: 'PATCH' });
+        try {
+          if (batchFrontRef.current && batchBackRef.current) {
+            const frontData = await toPng(batchFrontRef.current, options);
+            const backData = await toPng(batchBackRef.current, options);
+            
+            if (frontData && backData) {
+              zip.file(`${student.roll_number}_FRONT.png`, frontData.split(',')[1], { base64: true });
+              zip.file(`${student.roll_number}_BACK.png`, backData.split(',')[1], { base64: true });
+              
+              if (!student.is_downloaded) {
+                await safeFetch(`/api/admin/students/${student.id}/downloaded`, { method: 'PATCH' });
+              }
+              successCount++;
+            }
+          }
+        } catch (singleErr) {
+          console.error(`Error zipping student ${student.roll_number}:`, singleErr);
         }
       }
 
       setZipProgress(100);
-      const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `NEW_ID_CARDS_${new Date().toISOString().split('T')[0]}.zip`);
+      if (successCount > 0) {
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `ID_CARDS_${new Date().toISOString().split('T')[0]}.zip`);
+      } else {
+        alert('কোনো আইডি কার্ড জেনারেট করা সম্ভব হয়নি। অনুগ্রহ করে শিক্ষার্থীদের ছবি ও তথ্য পুনরায় চেক করুন।');
+      }
       fetchStudents();
     } catch (err) {
       console.error('ZIP Error:', err);
@@ -814,6 +893,16 @@ function StudentManagement() {
             )))}
           </select>
 
+          <select 
+            className="border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-gov-green/20 bg-white font-bengali text-slate-700 font-bold"
+            value={downloadFilter}
+            onChange={e => setDownloadFilter(e.target.value as any)}
+          >
+            <option value="all">সকল আইডি কার্ড</option>
+            <option value="new">নতুন আইডি কার্ড (NEW)</option>
+            <option value="downloaded">ডাউনলোডকৃত কার্ড</option>
+          </select>
+
           <button 
             onClick={exportToZIP}
             disabled={isZipping}
@@ -834,9 +923,53 @@ function StudentManagement() {
         </div>
       </div>
 
+      {selectedStudentIds.length > 0 && (
+        <div className="bg-gov-green/5 border border-gov-green/20 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 font-bengali text-sm text-slate-800 font-bold animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <span className="bg-gov-green/10 text-gov-green rounded-lg px-2.5 py-1 text-xs">
+              {selectedStudentIds.length} জন নির্বাচিত
+            </span>
+            <span>শিক্ষার্থীর স্ট্যাটাস পরিবর্তন করুন:</span>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <select
+              onChange={async (e) => {
+                const status = e.target.value;
+                if (!status) return;
+                const statusLabel =
+                  status === 'approved' ? 'অনুমোদিত (Approved)' :
+                  status === 'processing' ? 'প্রসেসিং (Processing)' :
+                  status === 'printed' ? 'প্রিন্টেড (Printed)' :
+                  status === 'rejected' ? 'প্রত্যাখ্যাত (Rejected)' :
+                  'অপেক্ষমান (Pending)';
+                
+                if (confirm(`${selectedStudentIds.length} জন শিক্ষার্থীর স্ট্যাটাস "${statusLabel}" এ পরিবর্তন করতে চান?`)) {
+                  await bulkUpdateStatus(status);
+                }
+                e.target.value = "";
+              }}
+              className="border rounded-xl px-4 py-2 bg-white text-sm text-slate-700 font-bold focus:ring-2 focus:ring-gov-green/25 flex-1 sm:flex-none"
+            >
+              <option value="">স্ট্যাটাস নির্বাচন করুন</option>
+              <option value="pending">অপেক্ষমান (Pending)</option>
+              <option value="approved">অনুমোদিত (Approved)</option>
+              <option value="processing">প্রসেসিং (Processing)</option>
+              <option value="printed">প্রিন্টেড (Printed)</option>
+              <option value="rejected">প্রত্যাখ্যাত (Rejected)</option>
+            </select>
+            <button 
+              onClick={() => setSelectedStudentIds([])}
+              className="text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-xl px-3 py-2 transition-all font-bold"
+            >
+              নির্বাচন বাতিল
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden max-w-full">
         {loading ? (
-          <div className="p-20 text-center text-gray-400 font-bengali">লোডিং হচ্ছে...</div>
+          <div className="p-20 text-center text-gray-400 font-bengali font-bold">লোডিং হচ্ছে...</div>
         ) : (
           <>
             {/* Desktop Table View */}
@@ -844,14 +977,45 @@ function StudentManagement() {
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-slate-50 border-b text-gray-500 uppercase text-[10px] font-bold whitespace-nowrap">
                    <tr>
+                      <th className="px-4 py-4 w-12 text-center">
+                        <input 
+                          type="checkbox"
+                          className="rounded border-slate-300 text-gov-green focus:ring-gov-green/20 cursor-pointer"
+                          checked={paginatedStudents.length > 0 && paginatedStudents.every(s => selectedStudentIds.includes(s.id))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const pageIds = paginatedStudents.map(s => s.id);
+                              setSelectedStudentIds(prev => Array.from(new Set([...prev, ...pageIds])));
+                            } else {
+                              const pageIds = paginatedStudents.map(s => s.id);
+                              setSelectedStudentIds(prev => prev.filter(id => !pageIds.includes(id)));
+                            }
+                          }}
+                        />
+                      </th>
                       <th className="px-6 py-4">Student</th>
                       <th className="px-6 py-4">Details</th>
+                      <th className="px-6 py-4 text-center">Status</th>
                       <th className="px-6 py-4 text-center">Actions</th>
                    </tr>
                 </thead>
                 <tbody className="divide-y">
                    {paginatedStudents.map(student => (
                      <tr key={student.id} className="hover:bg-indigo-50/20 transition-colors">
+                        <td className="px-4 py-6 w-12 text-center">
+                          <input 
+                            type="checkbox"
+                            className="rounded border-slate-300 text-gov-green focus:ring-gov-green/20 cursor-pointer"
+                            checked={selectedStudentIds.includes(student.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedStudentIds(prev => [...prev, student.id]);
+                              } else {
+                                setSelectedStudentIds(prev => prev.filter(id => id !== student.id));
+                              }
+                            }}
+                          />
+                        </td>
                         <td className="px-6 py-6 min-w-[280px]">
                            <div className="flex items-center gap-4">
                              <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border shrink-0">
@@ -872,6 +1036,25 @@ function StudentManagement() {
                            <p className="text-xs font-bold text-gov-green">{student.technology}</p>
                            <p className="text-gray-500">Roll: {student.roll_number}</p>
                            <p className="text-gray-400 text-[10px]">Session: {student.session}</p>
+                        </td>
+                        <td className="px-6 py-4 min-w-[150px] text-center whitespace-nowrap">
+                          <select
+                            value={student.status || 'pending'}
+                            onChange={(e) => updateStatus(student.id, e.target.value)}
+                            className={`text-xs font-bold rounded-xl px-2.5 py-1.5 border focus:ring-2 focus:ring-offset-1 focus:ring-gov-green/20 cursor-pointer font-bengali ${
+                              student.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              student.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200 font-extrabold' :
+                              student.status === 'printed' ? 'bg-purple-50 text-purple-700 border-purple-200 font-extrabold' :
+                              student.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}
+                          >
+                            <option value="pending" className="text-slate-700">অপেক্ষমান (Pending)</option>
+                            <option value="approved" className="text-slate-700">অনুমোদিত (Approved)</option>
+                            <option value="processing" className="text-slate-700">প্রসেসিং (Processing)</option>
+                            <option value="printed" className="text-slate-700">প্রিন্টেড (Printed)</option>
+                            <option value="rejected" className="text-slate-700">প্রত্যাখ্যাত (Rejected)</option>
+                          </select>
                         </td>
                          <td className="px-6 py-4 min-w-[150px]">
                           <div className="flex items-center justify-center gap-2 whitespace-nowrap">
@@ -906,6 +1089,18 @@ function StudentManagement() {
                  paginatedStudents.map(student => (
                    <div key={student.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
                      <div className="flex items-center gap-3">
+                        <input 
+                          type="checkbox"
+                          className="rounded border-slate-300 text-gov-green focus:ring-gov-green/20 cursor-pointer shrink-0"
+                          checked={selectedStudentIds.includes(student.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedStudentIds(prev => [...prev, student.id]);
+                            } else {
+                              setSelectedStudentIds(prev => prev.filter(id => id !== student.id));
+                            }
+                          }}
+                        />
                         <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0 shadow-sm">
                            <img src={student.photo_path || '/default-user.png'} className="w-full h-full object-cover" alt="" />
                         </div>
@@ -917,6 +1112,25 @@ function StudentManagement() {
                              )}
                            </div>
                            <p className="text-[11px] font-bold text-slate-400">Roll: {student.roll_number}</p>
+                           <div className="mt-1">
+                             <select
+                               value={student.status || 'pending'}
+                               onChange={(e) => updateStatus(student.id, e.target.value)}
+                               className={`text-[9px] font-extrabold rounded-lg px-2 py-0.5 border cursor-pointer font-bengali ${
+                                 student.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                 student.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200 font-black' :
+                                 student.status === 'printed' ? 'bg-purple-50 text-purple-700 border-purple-200 font-black' :
+                                 student.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                                 'bg-amber-50 text-amber-700 border-amber-200'
+                               }`}
+                             >
+                               <option value="pending">পেন্ডিং (Pending)</option>
+                               <option value="approved">অনুমোদিত (Approved)</option>
+                               <option value="processing">প্রসেসিং (Processing)</option>
+                               <option value="printed">প্রিন্টেড (Printed)</option>
+                               <option value="rejected">প্রত্যাখ্যাত (Rejected)</option>
+                             </select>
+                           </div>
                         </div>
                      </div>
                      <button 
@@ -999,7 +1213,29 @@ function StudentManagement() {
                       <div className="w-full space-y-4">
                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">স্ট্যাটাস</p>
-                           <span className="bg-gov-green text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">Active Member</span>
+                           <span className="bg-emerald-50 rounded-xl">
+                            <select
+                              value={selectedStudent.status || 'pending'}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                await updateStatus(selectedStudent.id, newStatus);
+                                setSelectedStudent(prev => prev ? { ...prev, status: newStatus as any } : null);
+                              }}
+                              className={`text-[11px] font-black rounded-xl px-2.5 py-1.5 border focus:ring-2 focus:ring-offset-1 focus:ring-gov-green/20 cursor-pointer font-bengali w-full text-center ${
+                                selectedStudent.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                selectedStudent.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200 font-extrabold pb-0.5' :
+                                selectedStudent.status === 'printed' ? 'bg-purple-50 text-purple-700 border-purple-200 font-extrabold pb-0.5' :
+                                selectedStudent.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                                'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}
+                            >
+                              <option value="pending" className="text-slate-700">অপেক্ষমান (Pending)</option>
+                              <option value="approved" className="text-slate-700">অনুমোদিত (Approved)</option>
+                              <option value="processing" className="text-slate-700">প্রসেসিং (Processing)</option>
+                              <option value="printed" className="text-slate-700">প্রিন্টেড (Printed)</option>
+                              <option value="rejected" className="text-slate-700">প্রত্যাখ্যাত (Rejected)</option>
+                            </select>
+                          </span>
                          </div>
                       </div>
                     </div>
@@ -1020,6 +1256,11 @@ function StudentManagement() {
                           <DetailItem label="অভিভাবকের মোবাইল" value={selectedStudent.guardian_mobile} />
                           <DetailItem label="জন্ম তারিখ" value={selectedStudent.dob} />
                           <DetailItem label="রক্তের গ্রুপ" value={selectedStudent.blood_group} />
+                          <DetailItem 
+                            label="যোগদানের তারিখ" 
+                            value={selectedStudent.created_at ? new Date(selectedStudent.created_at).toLocaleString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'} 
+                            font="bengali" 
+                          />
                        </div>
                        <div className="pt-6 md:pt-8 border-t border-slate-100">
                           <DetailItem label="স্থায়ী ঠিকানা" value={selectedStudent.address} font="bengali" fullWidth />
@@ -1058,6 +1299,55 @@ function StudentManagement() {
                     />
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {studentToDelete && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setStudentToDelete(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[32px] shadow-2xl relative z-10 overflow-hidden p-8 flex flex-col items-center text-center border border-slate-100"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 font-bengali mb-3">আপনি কি সুনিশ্চিত?</h3>
+              <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed font-bengali">
+                আপনি কি নিশ্চিত যে আপনি <strong className="text-slate-800 font-extrabold">{studentToDelete.full_name_en}</strong> এর শিক্ষার্থীর তথ্য স্থায়ীভাবে ডিলিট করতে চান? এই কাজ কোনোভাবেই আর ফিরিয়ে নেওয়া যাবে না।
+              </p>
+              <div className="flex gap-4 w-full">
+                <button
+                  type="button"
+                  onClick={() => setStudentToDelete(null)}
+                  disabled={isDeleting}
+                  className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-colors disabled:opacity-55 font-bengali"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                  className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-colors shadow-lg shadow-red-600/15 flex items-center justify-center gap-2 disabled:bg-red-500 font-bengali"
+                >
+                  {isDeleting ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  {isDeleting ? 'ডিলিট হচ্ছে...' : 'হ্যাঁ, ডিলিট করুন'}
+                </button>
               </div>
             </motion.div>
           </div>

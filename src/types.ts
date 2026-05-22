@@ -23,7 +23,7 @@ export interface Student {
   guardian_mobile: string;
   student_mobile: string;
   photo_path: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'printed';
   is_downloaded: number;
   created_at: string;
 }
@@ -60,6 +60,7 @@ export interface User {
   mother_name?: string;
   guardian_mobile?: string;
   signature_path?: string;
+  created_at?: string;
 }
 
 export interface SystemSettings {
