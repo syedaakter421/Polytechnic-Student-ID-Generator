@@ -101,30 +101,36 @@ async function seedAdmin() {
 }
 
 // --- Express App Setup ---
-async function startServer() {
-  await seedAdmin();
-  const app = express();
-  
-  // Basic Health Check for infrastructure
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  });
+// VERCEL INTEGRATION COMMENT:
+// Run admin seed as an asynchronous background task on application startup
+seedAdmin().catch(console.error);
 
-  app.use(cors());
-  app.use(express.json());
-  
-  // Ensure uploads directory exists
-  const uploadDir = path.join(__dirname, 'uploads');
+const app = express();
+
+// Basic Health Check for infrastructure
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.VERCEL ? 'vercel' : 'local' });
+});
+
+app.use(cors());
+app.use(express.json());
+
+// Ensure uploads directory exists (Only on local machine/VPS hosting, skip on read-only Vercel)
+const uploadDir = path.join(__dirname, 'uploads');
+if (!process.env.VERCEL) {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
   }
   app.use('/uploads', express.static(uploadDir));
+}
 
-  // Storage Config
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-  });
+// Storage Config (Use Vercel's writable /tmp directory if deployed on Vercel)
+const tempStorageDir = process.env.VERCEL ? '/tmp' : 'uploads';
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, tempStorageDir),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
   
   const upload = multer({ 
     storage,
@@ -489,33 +495,47 @@ async function startServer() {
     }
   });
 
-  // --- Vite Middleware ---
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
-  // Global Error Handler
-  app.use((err: any, req: Request, res: Response, next: any) => {
+  // Global Error Handler Definition
+  const globalErrorHandler = (err: any, req: Request, res: Response, next: any) => {
     console.error('Global Server Error:', err);
     res.status(err.status || 500).json({
       error: err.message || 'Internal Server Error',
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
-  });
+  };
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
+  // VERCEL INTEGRATION COMMENT:
+  // Register Vite middleware and server listener only in local environments (skip during Vercel deployment)
+  if (!process.env.VERCEL) {
+    if (process.env.NODE_ENV !== 'production') {
+      createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      }).then((vite) => {
+        app.use(vite.middlewares);
+        app.use(globalErrorHandler);
+        
+        app.listen(PORT, '0.0.0.0', () => {
+          console.log(`Server running on http://localhost:${PORT}`);
+        });
+      }).catch(console.error);
+    } else {
+      const distPath = path.join(__dirname, 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+      app.use(globalErrorHandler);
+      
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    }
+  } else {
+    // Standard Global Error Handler for Serverless deployment on Vercel
+    app.use(globalErrorHandler);
+  }
 
-startServer();
+  // VERCEL INTEGRATION COMMENT:
+  // Export app default for the Vercel serverless functions wrapper
+  export default app;
