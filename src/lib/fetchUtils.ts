@@ -4,13 +4,40 @@ export async function safeFetch(url: string, options?: RequestInit) {
   const maxAttempts = (options?.method || 'GET') === 'GET' ? 2 : 1;
   const timeout = 30000; // 30 seconds
 
+  // Extract existing headers safely
+  const headers: Record<string, string> = {};
+  if (options && options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, value]) => {
+        headers[key] = value;
+      });
+    } else {
+      Object.assign(headers, options.headers);
+    }
+  }
+
+  // Inject Bearer token if present inside localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (token && !headers['Authorization'] && !headers['authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers
+  };
+
   while (attempts < maxAttempts) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
       const response = await fetch(url, {
-        ...options,
+        ...fetchOptions,
         signal: controller.signal
       });
       clearTimeout(timeoutId);

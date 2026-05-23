@@ -15,7 +15,18 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev';
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.warn('⚠️ WARNING: JWT_SECRET environment variable is missing.');
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ CRITICAL ERROR: JWT_SECRET MUST be set in production environment. Exiting.');
+      process.exit(1);
+    }
+    return 'fallback_secret_for_dev_only_1234567890';
+  }
+  return secret;
+})();
 const PORT = 3000;
 
 // Supabase Setup
@@ -27,6 +38,42 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// --- Security & Auth Middlewares ---
+function authenticateToken(req: any, res: Response, next: any) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'টোকেন পাওয়া যায়নি (Unauthorized)' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    if (err) {
+      return res.status(403).json({ error: 'অবৈধ টোকেন (Forbidden)' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+function requireAdmin(req: any, res: Response, next: any) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'অ্যাডমিন অ্যাক্সেস প্রয়োজন' });
+  }
+  next();
+}
+
+function requireStudentOrAdmin(req: any, res: Response, next: any) {
+  const { id } = req.params;
+  if (req.user?.role === 'admin') {
+    return next();
+  }
+  if (req.user?.role === 'student' && req.user?.id === id) {
+    return next();
+  }
+  return res.status(403).json({ error: 'প্রোফাইল পরিবর্তনের অনুমতি নেই' });
+}
 
 // Ensure default admin exists in Supabase
 async function seedAdmin() {
@@ -78,7 +125,22 @@ async function startServer() {
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
   });
-  const upload = multer({ storage });
+  
+  const upload = multer({ 
+    storage,
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png|gif|webp/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+
+      if (extname && mimetype) {
+        cb(null, true);
+      } else {
+        cb(new Error('শুধুমাত্র ছবি আপলোড করা যাবে (.jpg, .jpeg, .png, .gif, .webp)'));
+      }
+    },
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  });
 
   // --- Auth API ---
 
@@ -106,22 +168,6 @@ async function startServer() {
         }
       }
       
-      // Fallback for default admin credentials if database query fails or user isn't found in DB
-      if (email === 'admin@gmail.com' && password === 'admin123') {
-        const fallbackId = '00000000-0000-0000-0000-000000000000';
-        const token = jwt.sign({ id: fallbackId, role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
-        return res.json({ 
-          token, 
-          user: { 
-            id: fallbackId, 
-            username: 'admin', 
-            email: 'admin@gmail.com', 
-            full_name: 'Super Admin', 
-            role: 'admin' 
-          } 
-        });
-      }
-      
       return res.status(401).json({ error: 'Invalid credentials' });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -129,7 +175,7 @@ async function startServer() {
   });
 
   // Update Admin Profile (including password)
-  app.patch('/api/admin/profile', async (req, res) => {
+  app.patch('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { id, full_name, password } = req.body;
       if (!id) return res.status(400).json({ error: 'Admin ID required' });
@@ -173,7 +219,20 @@ async function startServer() {
       const files = req.files;
       
       const hashedPassword = bcrypt.hashSync(data.password, 10);
-      const photoPath = files.photo ? `/uploads/${files.photo[0].filename}` : null;
+      
+      let photoPath = null;
+      if (files && files.photo && files.photo[0]) {
+        try {
+          const fileContent = fs.readFileSync(files.photo[0].path);
+          const base64String = fileContent.toString('base64');
+          const mimeType = files.photo[0].mimetype;
+          photoPath = `data:${mimeType};base64,${base64String}`;
+          // Clean up the temporary uploaded file
+          fs.unlinkSync(files.photo[0].path);
+        } catch (fileErr) {
+          console.error('Error encoding photo to base64 during signup:', fileErr);
+        }
+      }
 
       const { error } = await supabase.from('students').insert([{
         full_name_bn: data.full_name_bn,
@@ -230,7 +289,7 @@ async function startServer() {
   });
 
   // Update Student Profile
-  app.patch('/api/student/profile/:id', upload.fields([{ name: 'photo', maxCount: 1 }]), async (req: any, res: Response) => {
+  app.patch('/api/student/profile/:id', authenticateToken, requireStudentOrAdmin, upload.fields([{ name: 'photo', maxCount: 1 }]), async (req: any, res: Response) => {
     try {
       const { id } = req.params;
       const data = req.body || {};
@@ -251,7 +310,16 @@ async function startServer() {
       });
 
       if (files.photo && files.photo[0]) {
-        updates.photo_path = `/uploads/${files.photo[0].filename}`;
+        try {
+          const fileContent = fs.readFileSync(files.photo[0].path);
+          const base64String = fileContent.toString('base64');
+          const mimeType = files.photo[0].mimetype;
+          updates.photo_path = `data:${mimeType};base64,${base64String}`;
+          // Clean up the temporary uploaded file
+          fs.unlinkSync(files.photo[0].path);
+        } catch (fileErr) {
+          console.error('Error encoding photo to base64 during profile update:', fileErr);
+        }
       }
 
       if (data.password) {
@@ -301,7 +369,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/admin/settings', upload.fields([
+  app.post('/api/admin/settings', authenticateToken, requireAdmin, upload.fields([
     { name: 'principal_signature', maxCount: 1 },
     { name: 'registrar_signature', maxCount: 1 },
     { name: 'custom_template_front', maxCount: 1 },
@@ -312,17 +380,39 @@ async function startServer() {
 
     try {
       const updates: any = { ...data };
+      
+      const processBase64SettingFile = (fileField: any) => {
+        if (fileField && fileField[0]) {
+          try {
+            const fileContent = fs.readFileSync(fileField[0].path);
+            const base64String = fileContent.toString('base64');
+            const mimeType = fileField[0].mimetype;
+            const dataUrl = `data:${mimeType};base64,${base64String}`;
+            // Clean up file from local storage
+            fs.unlinkSync(fileField[0].path);
+            return dataUrl;
+          } catch (fileErr) {
+            console.error(`Error encoding setting file to base64:`, fileErr);
+          }
+        }
+        return null;
+      };
+
       if (files.principal_signature) {
-        updates.principal_signature_path = `/uploads/${files.principal_signature[0].filename}`;
+        const url = processBase64SettingFile(files.principal_signature);
+        if (url) updates.principal_signature_path = url;
       }
       if (files.registrar_signature) {
-        updates.registrar_signature_path = `/uploads/${files.registrar_signature[0].filename}`;
+        const url = processBase64SettingFile(files.registrar_signature);
+        if (url) updates.registrar_signature_path = url;
       }
       if (files.custom_template_front) {
-        updates.custom_template_front_path = `/uploads/${files.custom_template_front[0].filename}`;
+        const url = processBase64SettingFile(files.custom_template_front);
+        if (url) updates.custom_template_front_path = url;
       }
       if (files.custom_template_back) {
-        updates.custom_template_back_path = `/uploads/${files.custom_template_back[0].filename}`;
+        const url = processBase64SettingFile(files.custom_template_back);
+        if (url) updates.custom_template_back_path = url;
       }
 
       for (const [key, value] of Object.entries(updates)) {
@@ -335,7 +425,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/admin/students', async (req, res) => {
+  app.get('/api/admin/students', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { data: students, error } = await supabase.from('students').select('*').order('created_at', { ascending: false });
       if (error) throw error;
@@ -345,7 +435,7 @@ async function startServer() {
     }
   });
 
-  app.patch('/api/admin/students/:id/status', async (req, res) => {
+  app.patch('/api/admin/students/:id/status', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -357,7 +447,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/admin/students/:id', async (req, res) => {
+  app.delete('/api/admin/students/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { error } = await supabase.from('students').delete().eq('id', id);
@@ -368,7 +458,7 @@ async function startServer() {
     }
   });
 
-  app.patch('/api/admin/students/:id/downloaded', async (req, res) => {
+  app.patch('/api/admin/students/:id/downloaded', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { error } = await supabase.from('students').update({ is_downloaded: 1 }).eq('id', id);
@@ -379,7 +469,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/admin/stats', async (req, res) => {
+  app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { count: total, error: e1 } = await supabase.from('students').select('*', { count: 'exact', head: true });
       const { count: pending, error: e2 } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'pending');
