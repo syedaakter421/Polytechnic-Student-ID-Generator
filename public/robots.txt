@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://polytechnic-student-id-generator.vercel.app/sitemap.xml
+Sitemap: https://polytechnic-student-id-generator.onrender.com/sitemap.xml
