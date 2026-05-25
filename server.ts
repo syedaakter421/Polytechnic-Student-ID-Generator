@@ -101,34 +101,28 @@ async function seedAdmin() {
 }
 
 // --- Express App Setup ---
-// VERCEL INTEGRATION COMMENT:
-// Run admin seed as an asynchronous background task on application startup
-seedAdmin().catch(console.error);
+await seedAdmin();
 
 const app = express();
 
 // Basic Health Check for infrastructure
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.VERCEL ? 'vercel' : 'local' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use(cors());
 app.use(express.json());
 
-// Ensure uploads directory exists (Only on local machine/VPS hosting, skip on read-only Vercel)
+// Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
-if (!process.env.VERCEL) {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-  }
-  app.use('/uploads', express.static(uploadDir));
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
 }
+app.use('/uploads', express.static(uploadDir));
 
-// Storage Config (Use Vercel's writable /tmp directory if deployed on Vercel)
-const tempStorageDir = process.env.VERCEL ? '/tmp' : 'uploads';
-
+// Storage Config
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, tempStorageDir),
+  destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
   
@@ -504,38 +498,27 @@ const storage = multer.diskStorage({
     });
   };
 
-  // VERCEL INTEGRATION COMMENT:
-  // Register Vite middleware and server listener only in local environments (skip during Vercel deployment)
-  if (!process.env.VERCEL) {
-    if (process.env.NODE_ENV !== 'production') {
-      createViteServer({
-        server: { middlewareMode: true },
-        appType: 'spa',
-      }).then((vite) => {
-        app.use(vite.middlewares);
-        app.use(globalErrorHandler);
-        
-        app.listen(PORT, '0.0.0.0', () => {
-          console.log(`Server running on http://localhost:${PORT}`);
-        });
-      }).catch(console.error);
-    } else {
-      const distPath = path.join(__dirname, 'dist');
-      app.use(express.static(distPath));
-      app.get('*', (req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-      });
-      app.use(globalErrorHandler);
-      
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-      });
-    }
-  } else {
-    // Standard Global Error Handler for Serverless deployment on Vercel
+  // --- Vite Middleware & Listening Configuration ---
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
     app.use(globalErrorHandler);
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } else {
+    const distPath = path.join(__dirname, 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+    app.use(globalErrorHandler);
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   }
-
-  // VERCEL INTEGRATION COMMENT:
-  // Export app default for the Vercel serverless functions wrapper
-  export default app;
