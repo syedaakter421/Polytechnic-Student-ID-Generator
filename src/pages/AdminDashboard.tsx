@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Student, SystemSettings } from '../types';
-import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu, AlertTriangle } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu, AlertTriangle, Loader2 } from 'lucide-react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import IDCard from '../components/IDCard';
 import html2canvas from 'html2canvas';
@@ -906,9 +906,23 @@ function StudentManagement() {
           <button 
             onClick={exportToZIP}
             disabled={isZipping}
-            className="bg-gov-green text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gov-green-dark transition-all font-bengali shadow-lg shadow-gov-green/10 disabled:opacity-50"
+            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all font-bengali shadow-lg disabled:opacity-90 ${
+              isZipping 
+              ? 'bg-gov-green/80 text-white shadow-gov-green/10 cursor-wait' 
+              : 'bg-gov-green text-white hover:bg-gov-green-dark shadow-gov-green/10'
+            }`}
           >
-            <Download size={18} /> সব ডাউনলোড (ZIP)
+            {isZipping ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>ডাউনলোড হচ্ছে ({zipProgress}%)</span>
+              </>
+            ) : (
+              <>
+                <Download size={18} />
+                <span>সব ডাউনলোড (ZIP)</span>
+              </>
+            )}
           </button>
           <div className="relative flex-1 md:flex-none">
              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

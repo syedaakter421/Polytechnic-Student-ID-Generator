@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { User, SystemSettings } from '../types';
-import { Download, Printer, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Download, Printer, ShieldCheck, User as UserIcon, Loader2, Check } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -15,6 +15,14 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   const [qrCode, setQrCode] = useState('');
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [downloadPngState, setDownloadPngState] = useState<'idle' | 'downloading' | 'success'>('idle');
+  const [downloadPdfState, setDownloadPdfState] = useState<'idle' | 'downloading' | 'success'>('idle');
+
+  const [govtSealBase64, setGovtSealBase64] = useState('');
+  const [studentPhotoBase64, setStudentPhotoBase64] = useState('');
+  const [registrarSigBase64, setRegistrarSigBase64] = useState('');
+  const [principalSigBase64, setPrincipalSigBase64] = useState('');
 
   useEffect(() => {
     QRCode.toDataURL(`ID:${user.roll_number}|Name:${user.full_name_en}`, {
@@ -31,16 +39,117 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       });
   }, [user]);
 
+  useEffect(() => {
+    const sealUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png";
+    
+    const convertToBase64 = (url: string): Promise<string> => {
+      return new Promise((resolve) => {
+        fetch(url)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(url);
+            reader.readAsDataURL(blob);
+          })
+          .catch(() => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  resolve(canvas.toDataURL('image/png'));
+                  return;
+                }
+              } catch (e) {
+                console.error('Image base64 conversion failed:', e);
+              }
+              resolve(url);
+            };
+            img.onerror = () => resolve(url);
+            img.src = url;
+          });
+      });
+    };
+
+    convertToBase64(sealUrl).then(setGovtSealBase64);
+
+    if (user.photo_path) {
+      convertToBase64(user.photo_path).then(setStudentPhotoBase64);
+    } else {
+      setStudentPhotoBase64('');
+    }
+  }, [user.photo_path]);
+
+  useEffect(() => {
+    if (!settings) return;
+
+    const convertToBase64 = (url: string): Promise<string> => {
+      return new Promise((resolve) => {
+        fetch(url)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(url);
+            reader.readAsDataURL(blob);
+          })
+          .catch(() => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  resolve(canvas.toDataURL('image/png'));
+                  return;
+                }
+              } catch (e) {
+                console.error('Signature base64 conversion failed:', e);
+              }
+              resolve(url);
+            };
+            img.onerror = () => resolve(url);
+            img.src = url;
+          });
+      });
+    };
+
+    if (settings.registrar_signature_path) {
+      convertToBase64(settings.registrar_signature_path).then(setRegistrarSigBase64);
+    }
+    if (settings.principal_signature_path) {
+      convertToBase64(settings.principal_signature_path).then(setPrincipalSigBase64);
+    }
+  }, [settings]);
+
   const downloadPNG = async () => {
     if (!frontCaptureRef.current || !backCaptureRef.current) return;
+    if (downloadPngState !== 'idle') return;
+
+    setDownloadPngState('downloading');
     try {
       await document.fonts.ready;
       const options = {
         pixelRatio: 3,
         skipFonts: false,
-        cacheBust: true,
+        cacheBust: false,
         backgroundColor: '#ffffff',
       };
+
+      // Workaround for Safari/iOS: Pre-warm the canvas render pipeline twice
+      await toPng(frontCaptureRef.current, options).catch(() => {});
+      await toPng(backCaptureRef.current, options).catch(() => {});
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       const dataUrlFront = await toPng(frontCaptureRef.current, options);
       const dataUrlBack = await toPng(backCaptureRef.current, options);
@@ -50,31 +159,48 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       linkFront.href = dataUrlFront;
       linkFront.click();
 
-      setTimeout(() => {
-        const linkBack = document.createElement('a');
-        linkBack.download = `ID_CARD_${user.roll_number}_BACK.png`;
-        linkBack.href = dataUrlBack;
-        linkBack.click();
-      }, 500);
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          const linkBack = document.createElement('a');
+          linkBack.download = `ID_CARD_${user.roll_number}_BACK.png`;
+          linkBack.href = dataUrlBack;
+          linkBack.click();
+          resolve();
+        }, 450);
+      });
 
       if (onDownload) onDownload();
+
+      setDownloadPngState('success');
+      setTimeout(() => {
+        setDownloadPngState('idle');
+      }, 2000);
       
     } catch (err) {
       console.error('Image download failed:', err);
+      setDownloadPngState('idle');
     }
   };
 
   const downloadPDF = async () => {
     if (!frontCaptureRef.current || !backCaptureRef.current) return;
+    if (downloadPdfState !== 'idle') return;
+
+    setDownloadPdfState('downloading');
     try {
       await document.fonts.ready;
       const exportOptions = { 
         pixelRatio: 3,
         skipFonts: false,
-        cacheBust: true,
+        cacheBust: false,
         backgroundColor: '#ffffff',
       };
       
+      // Workaround for Safari/iOS: Pre-warm the canvas render pipeline twice
+      await toPng(frontCaptureRef.current, exportOptions).catch(() => {});
+      await toPng(backCaptureRef.current, exportOptions).catch(() => {});
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       const dataUrlFront = await toPng(frontCaptureRef.current, exportOptions);
       const dataUrlBack = await toPng(backCaptureRef.current, exportOptions);
       
@@ -85,8 +211,14 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       pdf.save(`ID_CARD_${user.roll_number}.pdf`);
 
       if (onDownload) onDownload();
+
+      setDownloadPdfState('success');
+      setTimeout(() => {
+        setDownloadPdfState('idle');
+      }, 2000);
     } catch (err) {
       console.error('PDF download failed:', err);
+      setDownloadPdfState('idle');
     }
   };
 
@@ -101,7 +233,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
           <div className="pt-8">
             <div className="flex justify-center mb-4">
               <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png" 
+                src={govtSealBase64 || "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png"} 
                 className="w-[140px] h-[140px] object-contain" 
                 alt="Logo" 
                 crossOrigin="anonymous"
@@ -122,8 +254,8 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
             <div className="w-[340px] bg-[#ffcc29] mt-0 p-[8px] rounded-b-[160px] h-[360px] z-[2] shadow-xl">
               <div className="text-[28px] font-black text-slate-800 mb-2 mt-2">Student ID Card</div>
               <div className="bg-slate-200 w-[260px] h-[280px] mx-auto rounded-b-[120px] flex items-center justify-center border-[6px] border-white overflow-hidden shadow-inner">
-                {user.photo_path ? (
-                  <img src={user.photo_path} className="w-full h-full object-cover" alt="Student" crossOrigin="anonymous" />
+                {studentPhotoBase64 || user.photo_path ? (
+                  <img src={studentPhotoBase64 || user.photo_path} className="w-full h-full object-cover" alt="Student" crossOrigin="anonymous" />
                 ) : (
                   <div className="text-slate-400 flex flex-col items-center">
                     <UserIcon size={100} />
@@ -179,13 +311,13 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
           <div className="absolute bottom-16 left-0 w-full px-20 flex justify-between">
             <div className="text-center w-[200px]">
               <div className="h-20 flex items-end justify-center mb-1">
-                {settings.registrar_signature_path && <img src={settings.registrar_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
+                {(registrarSigBase64 || settings.registrar_signature_path) && <img src={registrarSigBase64 || settings.registrar_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
               </div>
               <div className="border-t-2 border-[#002d3a] pt-1 text-[22px] font-black">Registrar</div>
             </div>
             <div className="text-center w-[200px]">
               <div className="h-20 flex items-end justify-center mb-1">
-                {settings.principal_signature_path && <img src={settings.principal_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
+                {(principalSigBase64 || settings.principal_signature_path) && <img src={principalSigBase64 || settings.principal_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
               </div>
               <div className="border-t-2 border-[#002d3a] pt-1 text-[22px] font-black">Principal</div>
             </div>
@@ -324,26 +456,82 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       {/* Hidden Capture Area for High Quality Download (1:1 scale) */}
       <div
         style={{
-          position: 'fixed',
-          top: '-99999px',
-          left: '-99999px',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '0px',
+          height: '0px',
+          overflow: 'hidden',
           pointerEvents: 'none',
           zIndex: -1000,
           background: '#fff'
         }}
       >
         {renderFrontSide(frontCaptureRef, true)}
-        <div style={{ marginTop: '1200px' }}>
-          {renderBackSide(backCaptureRef, true)}
-        </div>
+        {renderBackSide(backCaptureRef, true)}
       </div>
 
       <div className="flex gap-4 mb-4 sticky top-4 z-[10] bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200">
-        <button onClick={downloadPNG} className="flex items-center gap-2 bg-gov-green text-white px-5 py-2.5 rounded-xl hover:bg-gov-green-dark transition-all text-sm font-bold font-bengali shadow-lg shadow-gov-green/20">
-          <Download size={18} /> ছবি ডাউনলোড
+        <button 
+          onClick={downloadPNG} 
+          disabled={downloadPngState !== 'idle'}
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold font-bengali shadow-lg transition-all min-w-[145px] hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 disabled:opacity-90 ${
+            downloadPngState === 'success' 
+            ? 'bg-[#15803d] text-white shadow-[#15803d]/20' 
+            : downloadPngState === 'downloading'
+            ? 'bg-gov-green/80 text-white shadow-gov-green/10 cursor-wait'
+            : 'bg-gov-green text-white hover:bg-gov-green-dark shadow-gov-green/20'
+          }`}
+        >
+          {downloadPngState === 'downloading' && (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span>ডাউনলোড হচ্ছে...</span>
+            </>
+          )}
+          {downloadPngState === 'success' && (
+            <>
+              <Check size={18} className="animate-bounce" />
+              <span>সম্পন্ন হয়েছে!</span>
+            </>
+          )}
+          {downloadPngState === 'idle' && (
+            <>
+              <Download size={18} />
+              <span>ছবি ডাউনলোড</span>
+            </>
+          )}
         </button>
-        <button onClick={downloadPDF} className="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-xl hover:bg-slate-900 transition-all text-sm font-bold font-bengali shadow-lg shadow-slate-900/20">
-          <Printer size={18} /> পিডিএফ ডাউনলোড
+
+        <button 
+          onClick={downloadPDF} 
+          disabled={downloadPdfState !== 'idle'}
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold font-bengali shadow-lg transition-all min-w-[155px] hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 disabled:opacity-90 ${
+            downloadPdfState === 'success' 
+            ? 'bg-[#15803d] text-white shadow-[#15803d]/20' 
+            : downloadPdfState === 'downloading'
+            ? 'bg-slate-700 text-white shadow-slate-900/10 cursor-wait'
+            : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-900/20'
+          }`}
+        >
+          {downloadPdfState === 'downloading' && (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span>পিডিএফ হচ্ছে...</span>
+            </>
+          )}
+          {downloadPdfState === 'success' && (
+            <>
+              <Check size={18} className="animate-bounce" />
+              <span>সম্পন্ন হয়েছে!</span>
+            </>
+          )}
+          {downloadPdfState === 'idle' && (
+            <>
+              <Printer size={18} />
+              <span>পিডিএফ ডাউনলোড</span>
+            </>
+          )}
         </button>
       </div>
 
