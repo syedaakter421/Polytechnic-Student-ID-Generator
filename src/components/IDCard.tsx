@@ -119,7 +119,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
 
           {/* Top Design / Shield */}
           <div className="h-[320px] bg-[#dff3f6] [clip-path:ellipse(80%_100%_at_50%_0%)] flex justify-center">
-            <div className="w-[340px] bg-[#ffcc29] -mt-1 p-[8px] rounded-b-[160px] h-[360px] z-[2] shadow-xl">
+            <div className="w-[340px] bg-[#ffcc29] mt-0 p-[8px] rounded-b-[160px] h-[360px] z-[2] shadow-xl">
               <div className="text-[28px] font-black text-slate-800 mb-2 mt-2">Student ID Card</div>
               <div className="bg-slate-200 w-[260px] h-[280px] mx-auto rounded-b-[120px] flex items-center justify-center border-[6px] border-white overflow-hidden shadow-inner">
                 {user.photo_path ? (
@@ -347,23 +347,27 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
         </button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-16 items-center lg:items-start justify-center w-full">
+      <div className="flex flex-col lg:flex-row gap-16 items-center lg:items-start justify-center w-full max-w-full">
         {/* Front Side Preview */}
-        <div className="flex flex-col items-center gap-6">
-          <span className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] font-sans">Front Side Preview</span>
-          <div style={{ width: previewWidth, height: previewHeight }} className="relative shrink-0 rounded-[12px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-slate-200">
-            <div className="origin-top-left" style={{ zoom: cardScale }}>
-              {renderFrontSide(cardRef)}
+        <div className="flex flex-col items-center gap-6 max-w-full">
+          <span className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] font-sans text-center">Front Side Preview</span>
+          <div className="max-w-full overflow-x-auto pb-4 px-2 flex justify-center w-full">
+            <div style={{ width: previewWidth, height: previewHeight }} className="relative shrink-0 rounded-[12px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-slate-200">
+              <div className="origin-top-left" style={{ zoom: cardScale }}>
+                {renderFrontSide(cardRef)}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Back Side Preview */}
-        <div className="flex flex-col items-center gap-6">
-          <span className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] font-sans">Back Side Preview</span>
-          <div style={{ width: previewWidth, height: previewHeight }} className="relative shrink-0 rounded-[12px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-slate-200">
-            <div className="origin-top-left" style={{ zoom: cardScale }}>
-              {renderBackSide(backCardRef)}
+        <div className="flex flex-col items-center gap-6 max-w-full">
+          <span className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] font-sans text-center">Back Side Preview</span>
+          <div className="max-w-full overflow-x-auto pb-4 px-2 flex justify-center w-full">
+            <div style={{ width: previewWidth, height: previewHeight }} className="relative shrink-0 rounded-[12px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-slate-200">
+              <div className="origin-top-left" style={{ zoom: cardScale }}>
+                {renderBackSide(backCardRef)}
+              </div>
             </div>
           </div>
         </div>

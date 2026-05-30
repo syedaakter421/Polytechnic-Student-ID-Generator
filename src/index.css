@@ -76,6 +76,7 @@ body {
   -webkit-font-smoothing: antialiased;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 body ::selection {
@@ -83,34 +84,36 @@ body ::selection {
   color: white;
 }
 
-/* Base side backgrounds */
-body {
-  background-image: 
-    url('/images/bg_main_july.gif'),
-    url('/images/bg_main_july.gif');
-  background-repeat: repeat-y;
-  background-position: left top, right top;
-  background-attachment: fixed;
-  background-size: 1080px auto, 1080px auto;
-}
+/* Base side backgrounds - Enabled only on larger screens to ensure responsiveness */
+@media (min-width: 1200px) {
+  body {
+    background-image: 
+      url('/images/bg_main_july.gif'),
+      url('/images/bg_main_july.gif');
+    background-repeat: repeat-y;
+    background-position: left top, right top;
+    background-attachment: fixed;
+    background-size: 1080px auto, 1080px auto;
+  }
 
-/* Page specific background-size */
-body:has(.home-page) {
-  background-size: 1380px auto, 1380px auto;
-}
-body:has(.login-page) {
-  background-size: 1380px auto, 1380px auto;
-}
-body:has(.signup-page) {
-  background-size: 1380px auto, 1380px auto;
-}
-body:has(.admin-page), body:has(.student-page) {
-  background-size: 1380px auto, 1380px auto;
+  /* Page specific background-size */
+  body:has(.home-page) {
+    background-size: 1700px auto, 1700px auto;
+  }
+  body:has(.login-page) {
+    background-size: 1600px auto, 1600px auto;
+  }
+  body:has(.signup-page) {
+    background-size: 1600px auto, 1600px auto;
+  }
+  body:has(.admin-page), body:has(.student-page) {
+    background-size: 1700px auto, 1700px auto;
+  }
 }
 
 #root {
   min-height: 100vh;
-  max-width: 1100px;
+  max-width: 1380px;
   margin-left: auto;
   margin-right: auto;
   background-color: white;

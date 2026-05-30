@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 
 export default function Home({ user }: { user: User | null }) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const banners = ['images/Banner1.jpg', 'images/Banner2.jpg', 'images/Banner3.jpg'];
+  const banners = ['images/Banner4.jpg', 'images/Banner5.jpg', 'images/Banner6.jpg'];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -62,16 +62,16 @@ export default function Home({ user }: { user: User | null }) {
         </AnimatePresence>
         {/* Light Black Glass Overlay for Readability and Style */}
         <div className="absolute inset-0 bg-black/20 backdrop-blur-[0.5px] bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
-        <div className="absolute inset-0 flex items-center px-6 md:px-10">
+        <div className="absolute inset-0 flex items-center justify-center px-6 md:px-10 text-center">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-white max-w-2xl"
+            className="text-white max-w-2xl mx-auto flex flex-col items-center"
           >
-            <div className="inline-block px-4 py-1 bg-gov-red text-[10px] md:text-xs font-bold rounded-full mb-4 md:mb-6 tracking-widest uppercase">Official Student Portal</div>
+            <div className="inline-block px-4 py-1 bg-gov-red text-[10px] md:text-xs font-bold rounded-full mb-4 md:mb-6 tracking-widest uppercase mx-auto">Official Student Portal</div>
             <h2 className="text-3xl md:text-5xl font-black font-bengali mb-4 md:mb-6 tracking-tight leading-tight">আপনার স্মার্ট আইডি কার্ড <br className="hidden md:block"/> এখন এক ক্লিকেই</h2>
-            <p className="text-base md:text-xl mb-6 md:mb-10 opacity-70 leading-relaxed max-w-lg">শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউটের ছাত্রছাত্রীদের জন্য আধুনিক এবং স্বয়ংক্রিয় পরিচয়পত্র জেনারেশন সিস্টেম।</p>
-            <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
+            <p className="text-base md:text-xl mb-6 md:mb-10 opacity-70 leading-relaxed max-w-lg mx-auto">শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউটের ছাত্রছাত্রীদের জন্য আধুনিক এবং স্বয়ংক্রিয় পরিচয়পত্র জেনারেশন সিস্টেম।</p>
+            <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center w-full">
               {user ? (
                 <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="bg-gov-green text-white px-8 md:px-12 py-3 md:py-4 rounded-xl font-bold shadow-2xl hover:scale-105 transition-transform flex items-center justify-center gap-2 group text-sm md:text-base">
                   ভিজিট করুন <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
