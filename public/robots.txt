@@ -1,5 +1,8 @@
-# Robots.txt for Polytechnic Student ID Generator
 User-agent: *
 Allow: /
+
+# গুরুত্বপূর্ণ API বা Admin Route থাকলে Block করুন
+Disallow: /admin
+Disallow: /dashboard
 
 Sitemap: https://polytechnic-student-id-generator.onrender.com/sitemap.xml
