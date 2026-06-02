@@ -40,7 +40,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   }, [user]);
 
   useEffect(() => {
-    const sealUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png";
+    const sealUrl = "/api/govt-seal";
     
     const convertToBase64 = (url: string): Promise<string> => {
       return new Promise((resolve) => {
@@ -233,12 +233,12 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
           <div className="pt-8">
             <div className="flex justify-center mb-4">
               <img 
-                src={govtSealBase64 || "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png"} 
+                src={govtSealBase64 || "/api/govt-seal"} 
                 className="w-[140px] h-[140px] object-contain" 
                 alt="Logo" 
                 crossOrigin="anonymous"
                 onError={(e) => {
-                  e.currentTarget.src = "https://upload.wikimedia.org/wikipedia/commons/8/84/Government_Seal_of_Bangladesh.svg";
+                  e.currentTarget.src = "/api/govt-seal";
                 }}
               />
             </div>
@@ -457,10 +457,10 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       <div
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '0px',
-          height: '0px',
+          top: '-9999px',
+          left: '-9999px',
+          width: '791px',
+          height: '2400px',
           overflow: 'hidden',
           pointerEvents: 'none',
           zIndex: -1000,

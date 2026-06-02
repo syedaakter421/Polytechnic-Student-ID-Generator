@@ -110,6 +110,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Proxy endpoint to prevent mobile CORS/taint canvas issues
+app.get('/api/govt-seal', async (req, res) => {
+  try {
+    const sealUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png";
+    const response = await fetch(sealUrl);
+    if (!response.ok) {
+      throw new Error(`Wikimedia returned status ${response.status}`);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error proxying government seal:', error);
+    res.status(502).json({ error: 'Failed to retrieve government seal image' });
+  }
+});
+
 app.use(cors());
 app.use(express.json());
 
