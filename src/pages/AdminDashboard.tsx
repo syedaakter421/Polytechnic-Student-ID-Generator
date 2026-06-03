@@ -372,6 +372,34 @@ function SettingsManagement() {
             <input type="hidden" name="field_positions" value={settings.field_positions || ''} />
           </div>
 
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-8 space-y-4">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest block font-bengali">আইডি কার্ড লোগো (ID Card Logo)</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="relative group">
+                <div className="border-2 border-dashed border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center transition-all group-hover:border-gov-green/50 hover:bg-slate-50 bg-white">
+                   {(previews.id_card_logo || settings.id_card_logo_path) ? (
+                      <div className="relative flex flex-col items-center animate-in fade-in duration-300">
+                        <img src={previews.id_card_logo || settings.id_card_logo_path} className="h-24 w-24 object-contain mb-4" alt="ID Card Logo" />
+                        <span className="text-[10px] text-slate-400 block text-center uppercase tracking-widest">বর্তমান লোগো (Current Logo)</span>
+                      </div>
+                   ) : (
+                      <div className="text-slate-300 flex flex-col items-center">
+                        <Download size={32} className="mb-2 rotate-180" />
+                        <span className="text-[10px] md:text-xs font-bold font-bengali">নতুন লোগো আপলোড করুন</span>
+                      </div>
+                   )}
+                   <input type="file" name="id_card_logo" onChange={(e) => handleFileChange(e, 'id_card_logo')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+              </div>
+              <div className="text-slate-500 text-xs md:text-sm space-y-2 font-bengali">
+                <p className="font-bold text-slate-700">লোগো সংক্রান্ত তথ্য:</p>
+                <p>• আইডি কার্ডে প্রদর্শিত হওয়ার জন্য একটি বর্গাকৃতির লোগো আপলোড করা বাঞ্ছনীয়।</p>
+                <p>• সাপোর্ট করা ফাইল ফরম্যাট: PNG, JPG, বা SVG।</p>
+                <p>• এই লোগোটি সরাসরি আইডি কার্ডের প্রধান লোগো হিসেবে ব্যবহৃত হবে।</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 pt-8 border-t border-slate-100">
             {/* Signatures */}
             <div className="space-y-4">

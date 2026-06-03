@@ -65,6 +65,7 @@ export interface User {
 
 export interface SystemSettings {
   id_card_template: 'classic' | 'modern' | 'minimal' | 'gradient' | 'custom' | 'sherpur';
+  id_card_logo_path?: string;
   principal_signature_path?: string;
   registrar_signature_path?: string;
   custom_template_front_path?: string;

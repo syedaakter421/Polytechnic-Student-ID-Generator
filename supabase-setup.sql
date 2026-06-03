@@ -62,16 +62,24 @@ ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
 -- Students Policies
+DROP POLICY IF EXISTS "Enable read for all" ON public.students;
+DROP POLICY IF EXISTS "Enable insert for all" ON public.students;
+DROP POLICY IF EXISTS "Enable update for all" ON public.students;
+DROP POLICY IF EXISTS "Enable delete for all" ON public.students;
 DROP POLICY IF EXISTS "Allow public read of students" ON public.students;
+
 CREATE POLICY "Enable read for all" ON public.students FOR SELECT USING (true);
 CREATE POLICY "Enable insert for all" ON public.students FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update for all" ON public.students FOR UPDATE USING (true);
 CREATE POLICY "Enable delete for all" ON public.students FOR DELETE USING (true);
 
 -- Settings Policies
+DROP POLICY IF EXISTS "Enable all for settings" ON public.settings;
 DROP POLICY IF EXISTS "Allow public read of settings" ON public.settings;
+
 CREATE POLICY "Enable all for settings" ON public.settings FOR ALL USING (true);
 
 -- Admins Policies
+DROP POLICY IF EXISTS "Enable all for admins" ON public.admins;
 CREATE POLICY "Enable all for admins" ON public.admins FOR ALL USING (true);
 

@@ -107,6 +107,12 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   useEffect(() => {
     if (!settings) return;
 
+    if (settings.id_card_logo_path) {
+      convertToBase64(settings.id_card_logo_path).then(setLogoBase64);
+    } else {
+      convertToBase64('/images/logo.png').then(setLogoBase64);
+    }
+
     if (settings.registrar_signature_path) {
       convertToBase64(settings.registrar_signature_path).then(setRegistrarSigBase64);
     }

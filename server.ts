@@ -443,7 +443,8 @@ const storage = multer.diskStorage({
     { name: 'principal_signature', maxCount: 1 },
     { name: 'registrar_signature', maxCount: 1 },
     { name: 'custom_template_front', maxCount: 1 },
-    { name: 'custom_template_back', maxCount: 1 }
+    { name: 'custom_template_back', maxCount: 1 },
+    { name: 'id_card_logo', maxCount: 1 }
   ]), async (req: any, res: Response) => {
     const data = req.body;
     const files = req.files as any;
@@ -468,6 +469,10 @@ const storage = multer.diskStorage({
         return null;
       };
 
+      if (files.id_card_logo) {
+        const url = processBase64SettingFile(files.id_card_logo);
+        if (url) updates.id_card_logo_path = url;
+      }
       if (files.principal_signature) {
         const url = processBase64SettingFile(files.principal_signature);
         if (url) updates.principal_signature_path = url;
