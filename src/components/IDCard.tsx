@@ -7,6 +7,59 @@ import jsPDF from 'jspdf';
 
 import { safeFetch } from '../lib/fetchUtils';
 
+// Robust, cross-browser, mobile-safe utility to convert any image URL to standard Base64.
+// If the image is already a Base64 string, it resolves immediately without network calls.
+const convertToBase64 = (url: string): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!url) {
+      resolve('');
+      return;
+    }
+    // If it's already a base64 encoded data URI, return immediately.
+    // This is vital for mobile Safari/Chrome, as calling fetch() on data: URIs causes exceptions.
+    if (url.startsWith('data:')) {
+      resolve(url);
+      return;
+    }
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(url);
+        reader.readAsDataURL(blob);
+      })
+      .catch((err) => {
+        console.warn(`Fetch base64 conversion failed for ${url}, trying canvas fallback:`, err);
+        // Canvas fallback for loading and encoding image (e.g. if CORS policy permits standard <img> tag loading)
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/png'));
+              return;
+            }
+          } catch (e) {
+            console.error('Canvas image conversion failed:', e);
+          }
+          resolve(url);
+        };
+        img.onerror = () => resolve(url);
+        img.src = url;
+      });
+  });
+};
+
 export default function IDCard({ user, onDownload }: { user: User, onDownload?: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const backCardRef = useRef<HTMLDivElement>(null);
@@ -19,10 +72,14 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   const [downloadPngState, setDownloadPngState] = useState<'idle' | 'downloading' | 'success'>('idle');
   const [downloadPdfState, setDownloadPdfState] = useState<'idle' | 'downloading' | 'success'>('idle');
 
-  const [govtSealBase64, setGovtSealBase64] = useState('');
   const [studentPhotoBase64, setStudentPhotoBase64] = useState('');
   const [registrarSigBase64, setRegistrarSigBase64] = useState('');
   const [principalSigBase64, setPrincipalSigBase64] = useState('');
+  const [logoBase64, setLogoBase64] = useState('');
+
+  useEffect(() => {
+    convertToBase64('/images/logo.png').then(setLogoBase64);
+  }, []);
 
   useEffect(() => {
     QRCode.toDataURL(`ID:${user.roll_number}|Name:${user.full_name_en}`, {
@@ -40,45 +97,6 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   }, [user]);
 
   useEffect(() => {
-    const sealUrl = "/api/govt-seal";
-    
-    const convertToBase64 = (url: string): Promise<string> => {
-      return new Promise((resolve) => {
-        fetch(url)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => resolve(url);
-            reader.readAsDataURL(blob);
-          })
-          .catch(() => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => {
-              try {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.drawImage(img, 0, 0);
-                  resolve(canvas.toDataURL('image/png'));
-                  return;
-                }
-              } catch (e) {
-                console.error('Image base64 conversion failed:', e);
-              }
-              resolve(url);
-            };
-            img.onerror = () => resolve(url);
-            img.src = url;
-          });
-      });
-    };
-
-    convertToBase64(sealUrl).then(setGovtSealBase64);
-
     if (user.photo_path) {
       convertToBase64(user.photo_path).then(setStudentPhotoBase64);
     } else {
@@ -89,41 +107,6 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   useEffect(() => {
     if (!settings) return;
 
-    const convertToBase64 = (url: string): Promise<string> => {
-      return new Promise((resolve) => {
-        fetch(url)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => resolve(url);
-            reader.readAsDataURL(blob);
-          })
-          .catch(() => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => {
-              try {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.drawImage(img, 0, 0);
-                  resolve(canvas.toDataURL('image/png'));
-                  return;
-                }
-              } catch (e) {
-                console.error('Signature base64 conversion failed:', e);
-              }
-              resolve(url);
-            };
-            img.onerror = () => resolve(url);
-            img.src = url;
-          });
-      });
-    };
-
     if (settings.registrar_signature_path) {
       convertToBase64(settings.registrar_signature_path).then(setRegistrarSigBase64);
     }
@@ -131,6 +114,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       convertToBase64(settings.principal_signature_path).then(setPrincipalSigBase64);
     }
   }, [settings]);
+
 
   const downloadPNG = async () => {
     if (!frontCaptureRef.current || !backCaptureRef.current) return;
@@ -233,13 +217,10 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
           <div className="pt-8">
             <div className="flex justify-center mb-4">
               <img 
-                src={govtSealBase64 || "/api/govt-seal"} 
+                src={logoBase64 || "/images/logo.png"} 
                 className="w-[140px] h-[140px] object-contain" 
                 alt="Logo" 
-                crossOrigin="anonymous"
-                onError={(e) => {
-                  e.currentTarget.src = "/api/govt-seal";
-                }}
+                crossOrigin="anonymous" 
               />
             </div>
             <div className="w-full bg-[#004d61] py-3">

@@ -11,6 +11,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import fs from 'fs';
+import https from 'https';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,23 +111,73 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Proxy endpoint to prevent mobile CORS/taint canvas issues
-app.get('/api/govt-seal', async (req, res) => {
-  try {
-    const sealUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png";
-    const response = await fetch(sealUrl);
-    if (!response.ok) {
-      throw new Error(`Wikimedia returned status ${response.status}`);
-    }
-    const buffer = Buffer.from(await response.arrayBuffer());
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send(buffer);
-  } catch (error) {
-    console.error('Error proxying government seal:', error);
-    res.status(502).json({ error: 'Failed to retrieve government seal image' });
-  }
+// Helper function to download images safely using Node https module with custom user agents (and follow redirects)
+function downloadImageWithHttps(url: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const requestOptions = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+      }
+    };
+    
+    https.get(url, requestOptions, (res) => {
+      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        // Recursively follow redirect
+        downloadImageWithHttps(res.headers.location).then(resolve).catch(reject);
+        return;
+      }
+      
+      if (res.statusCode !== 200) {
+        reject(new Error(`Server returned status code ${res.statusCode}`));
+        return;
+      }
+      
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
+// Proxy endpoint to immediately serve highly accurate offline vector SVG of the Government Seal of Bangladesh.
+// This completely avoids any external network requests, preventing Wikimedia 400/403 blocks in Cloud Run / Render environments.
+app.get('/api/govt-seal', (req, res) => {
+  const sealSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="140" height="140">
+    <circle cx="50" cy="50" r="48" fill="#006a4e" stroke="#f2a900" stroke-width="2.5" />
+    <circle cx="50" cy="50" r="26" fill="#f42a41" />
+    <circle cx="50" cy="50" r="21" fill="none" stroke="#f2a900" stroke-width="1.2" stroke-dasharray="3 1.5" />
+    <path d="M 50,30 Q 51.5,33 54.5,35 Q 55.5,36 58.5,38 Q 59.5,40 56.5,43 Q 56.5,45 53.5,46 Q 53.5,48 54.5,51 Q 53.5,52 49.5,53 Q 48.5,54 47.5,59 Q 45.5,60 43.5,62 Q 42.5,63 45.5,65 Q 44.5,67 Q 41.5,68 38.5,65 Q 37.5,66 39.5,70 37.5,71 Q 35.5,71 36.5,68 35.5,67 Q 36.5,64 41.5,60 Q 42.5,59 41.5,56 43.5,55 Q 44.5,54 43.5,49 Q 42.5,47 45.5,43 Q 45.5,41 43.5,40 Q 43.5,38 Q 44.5,36 48.5,36 Z" fill="#f2a900" />
+    <defs>
+      <path id="textPathTop" d="M 12,50 A 38,38 0 0,1 88,50" fill="none" />
+      <path id="textPathBottom" d="M 88,50 A 38,38 0 0,1 12,50" fill="none" />
+    </defs>
+    <text fill="#ffffff" font-size="7.8" font-weight="bold" font-family="sans-serif">
+      <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">গণপ্রজাতন্ত্রী বাংলাদেশ</textPath>
+    </text>
+    <text fill="#ffffff" font-size="8.5" font-weight="black" font-family="sans-serif">
+      <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">সরকার</textPath>
+    </text>
+    <g fill="#ffffff" transform="translate(13, 44) scale(0.6)">
+      <path d="M 10 0 L 13 7 L 20 7 L 15 11 L 17 18 L 10 14 L 3 18 L 5 11 L 0 7 L 7 7 Z" />
+    </g>
+    <g fill="#ffffff" transform="translate(13, 56) scale(0.6)">
+      <path d="M 10 0 L 13 7 L 20 7 L 15 11 L 17 18 L 10 14 L 3 18 L 5 11 L 0 7 L 7 7 Z" />
+    </g>
+    <g fill="#ffffff" transform="translate(75, 44) scale(0.6)">
+      <path d="M 10 0 L 13 7 L 20 7 L 15 11 L 17 18 L 10 14 L 3 18 L 5 11 L 0 7 L 7 7 Z" />
+    </g>
+    <g fill="#ffffff" transform="translate(75, 56) scale(0.6)">
+      <path d="M 10 0 L 13 7 L 20 7 L 15 11 L 17 18 L 10 14 L 3 18 L 5 11 L 0 7 L 7 7 Z" />
+    </g>
+  </svg>`;
+
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  return res.send(Buffer.from(sealSvg));
 });
 
 app.use(cors());
