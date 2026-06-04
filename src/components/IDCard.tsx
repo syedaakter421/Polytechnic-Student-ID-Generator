@@ -129,17 +129,18 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
     setDownloadPngState('downloading');
     try {
       await document.fonts.ready;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const options = {
-        pixelRatio: 3,
+        pixelRatio: isMobile ? 1.5 : 2,
         skipFonts: false,
-        cacheBust: false,
+        cacheBust: true,
         backgroundColor: '#ffffff',
       };
 
       // Workaround for Safari/iOS: Pre-warm the canvas render pipeline twice
       await toPng(frontCaptureRef.current, options).catch(() => {});
       await toPng(backCaptureRef.current, options).catch(() => {});
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const dataUrlFront = await toPng(frontCaptureRef.current, options);
       const dataUrlBack = await toPng(backCaptureRef.current, options);
@@ -179,17 +180,18 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
     setDownloadPdfState('downloading');
     try {
       await document.fonts.ready;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const exportOptions = { 
-        pixelRatio: 3,
+        pixelRatio: isMobile ? 1.5 : 2,
         skipFonts: false,
-        cacheBust: false,
+        cacheBust: true,
         backgroundColor: '#ffffff',
       };
       
       // Workaround for Safari/iOS: Pre-warm the canvas render pipeline twice
       await toPng(frontCaptureRef.current, exportOptions).catch(() => {});
       await toPng(backCaptureRef.current, exportOptions).catch(() => {});
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const dataUrlFront = await toPng(frontCaptureRef.current, exportOptions);
       const dataUrlBack = await toPng(backCaptureRef.current, exportOptions);
@@ -443,13 +445,14 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
       {/* Hidden Capture Area for High Quality Download (1:1 scale) */}
       <div
         style={{
-          position: 'absolute',
-          top: '-9999px',
-          left: '-9999px',
+          position: 'fixed',
+          top: '0',
+          left: '0',
           width: '791px',
           height: '2400px',
           overflow: 'hidden',
           pointerEvents: 'none',
+          opacity: 0,
           zIndex: -1000,
           background: '#fff'
         }}

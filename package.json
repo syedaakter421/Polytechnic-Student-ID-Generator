@@ -1,8 +1,14 @@
 {
-  "name": "react-example",
+  "name": "Polytechnic Student ID Generator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Web",
+  "url": "https://polytechnic-student-id-generator.onrender.com/",
+  "description": "Digital Student ID Card Generator and Verification System for Polytechnic Institutes in Bangladesh.",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
