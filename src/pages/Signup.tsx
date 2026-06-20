@@ -61,6 +61,36 @@ export default function Signup() {
     setLoading(true);
     setError('');
 
+    // Mobile validation: Must start with 01 and be exactly 11 digits
+    const mobilePattern = /^01\d{9}$/;
+    if (!mobilePattern.test(formData.mobile)) {
+      setError('The phone number is invalid');
+      setLoading(false);
+      return;
+    }
+
+    if (!mobilePattern.test(formData.guardian_mobile)) {
+      setError('The phone number is invalid');
+      setLoading(false);
+      return;
+    }
+
+    // Roll number validation: Must be exactly 6 digits
+    const rollPattern = /^\d{6}$/;
+    if (!rollPattern.test(formData.roll_number)) {
+      setError('রোল নম্বর অবশ্যই ৬ ডিজিটের (ইংরেজি সংখ্যায়) হতে হবে।');
+      setLoading(false);
+      return;
+    }
+
+    // Registration number validation: Must be exactly 10 digits
+    const regPattern = /^\d{10}$/;
+    if (!regPattern.test(formData.reg_number)) {
+      setError('রেজিস্ট্রেশন নম্বর অবশ্যই ১০ ডিজিটের (ইংরেজি সংখ্যায়) হতে হবে।');
+      setLoading(false);
+      return;
+    }
+
     const form = new FormData();
     if (formData && typeof formData === 'object' && formData !== null) {
       Object.entries(formData).forEach(([key, value]) => form.append(key, value as string));
@@ -157,12 +187,12 @@ export default function Signup() {
               {[
                 { label: 'পূর্ণ নাম (বাংলায়)', name: 'full_name_bn', type: 'text', placeholder: 'যেমন: মো: সাকিল ইসলাম' },
                 { label: 'Full Name (English)', name: 'full_name_en', type: 'text', placeholder: 'e.g. Md. Sakil Islam' },
-                { label: 'রোল নম্বর (ইংরেজি)', name: 'roll_number', type: 'number', placeholder: 'e.g. 123456 (6 digits)' },
-                { label: 'রেজিস্ট্রেশন নম্বর (ইংরেজি)', name: 'reg_number', type: 'number', placeholder: 'e.g. 1500012345 (10 digits)' },
+                { label: 'রোল নম্বর (ইংরেজি)', name: 'roll_number', type: 'text', placeholder: 'e.g. 123456 (6 digits)' },
+                { label: 'রেজিস্ট্রেশন নম্বর (ইংরেজি)', name: 'reg_number', type: 'text', placeholder: 'e.g. 1500012345 (10 digits)' },
                 { label: 'সেশন (ইংরেজি)', name: 'session', type: 'text', placeholder: 'e.g. 2022-23' },
                 { label: 'পর্ব (ইংরেজি)', name: 'semester', type: 'text', placeholder: 'e.g. 5th' },
-                { label: 'শিফট (ইংরেজি)', name: 'shift', type: 'text', placeholder: 'e.g. 1st/2nd' },
-                { label: 'রক্তের গ্রুপ (ইংরেজি)', name: 'blood_group', type: 'text', placeholder: 'e.g. AB+' },
+                { label: 'শিফট (ইংরেজি)', name: 'shift', type: 'select', placeholder: 'Select Shift' },
+                { label: 'রক্তের গ্রুপ (ইংরেজি)', name: 'blood_group', type: 'select', placeholder: 'Select Blood Group' },
                 { label: 'মোবাইল নম্বর (ইংরেজি)', name: 'mobile', type: 'tel', placeholder: '017...' },
                 { label: 'ইমেইল এড্রেস', name: 'email', type: 'email', placeholder: 'student@domain.com' },
                 { label: 'বাবার নাম (ইংরেজি)', name: 'father_name', type: 'text', placeholder: 'e.g. Md. Abdul Alim' },
@@ -176,15 +206,62 @@ export default function Signup() {
                   <label className="block text-sm font-bold text-gray-700 mb-1 font-bengali">{field.label}</label>
                   {field.name === 'technology' ? null : (
                     <div className="relative">
-                      <input 
-                        type={field.name === 'password' ? (showPassword ? 'text' : 'password') : field.type} 
-                        name={field.name}
-                        required
-                        placeholder={field.placeholder}
-                        value={(formData as any)[field.name] || ''}
-                        onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                        className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 focus:ring-4 focus:ring-gov-green/10 focus:border-gov-green focus:bg-white outline-none transition-all placeholder:text-slate-400"
-                      />
+                      {field.type === 'select' ? (
+                        <select
+                          name={field.name}
+                          required
+                          value={(formData as any)[field.name] || ''}
+                          onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                          className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 focus:ring-4 focus:ring-gov-green/10 focus:border-gov-green focus:bg-white outline-none transition-all cursor-pointer placeholder:text-slate-400"
+                        >
+                          <option value="">{field.placeholder}</option>
+                          {field.name === 'shift' ? (
+                            <>
+                              <option value="1st">1st</option>
+                              <option value="2nd">2nd</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="A+">A+</option>
+                              <option value="A-">A-</option>
+                              <option value="B+">B+</option>
+                              <option value="B-">B-</option>
+                              <option value="O+">O+</option>
+                              <option value="O-">O-</option>
+                              <option value="AB+">AB+</option>
+                              <option value="AB-">AB-</option>
+                            </>
+                          )}
+                        </select>
+                      ) : (
+                        <input 
+                          type={field.name === 'password' ? (showPassword ? 'text' : 'password') : field.type} 
+                          name={field.name}
+                          required
+                          placeholder={field.placeholder}
+                          value={(formData as any)[field.name] || ''}
+                          onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                          pattern={
+                            field.name === 'roll_number' ? "[0-9]{6}" :
+                            field.name === 'reg_number' ? "[0-9]{10}" :
+                            field.type === 'tel' ? "01[0-9]{9}" : undefined
+                          }
+                          maxLength={
+                            field.name === 'roll_number' ? 6 :
+                            field.name === 'reg_number' ? 10 :
+                            field.type === 'tel' ? 11 : undefined
+                          }
+                          title={
+                            field.name === 'roll_number' ? "রোল নম্বর অবশ্যই ৬ ডিজিটের (ইংরেজি সংখ্যায়) হতে হবে।" :
+                            field.name === 'reg_number' ? "রেজিস্ট্রেশন নম্বর অবশ্যই ১০ ডিজিটের (ইংরেজি সংখ্যায়) হতে হবে।" :
+                            field.type === 'tel' ? "The phone number is invalid" : undefined
+                          }
+                          inputMode={
+                            (field.name === 'roll_number' || field.name === 'reg_number' || field.type === 'tel') ? "numeric" : undefined
+                          }
+                          className="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 focus:ring-4 focus:ring-gov-green/10 focus:border-gov-green focus:bg-white outline-none transition-all placeholder:text-slate-400"
+                        />
+                      )}
                       {field.name === 'password' && (
                         <button
                           type="button"

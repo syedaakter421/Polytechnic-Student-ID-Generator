@@ -12,6 +12,7 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import fs from 'fs';
 import https from 'https';
+import rateLimit from 'express-rate-limit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -182,6 +183,20 @@ app.get('/api/govt-seal', (req, res) => {
 
 app.use(cors());
 app.use(express.json());
+
+// API Rate Limiting to prevent brute-force and DDoS
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: { 
+    error: 'Too many requests from this IP, please try again after 15 minutes. (অতিরিক্ত রিকোয়েস্ট পাঠানো হয়েছে, দয়া করে ১৫ মিনিট পর আবার চেষ্টা করুন।)' 
+  }
+});
+
+// Apply the rate limiter to all API endpoints starting with /api (excluding /api/health to keep infrastructure up)
+app.use('/api', apiLimiter);
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
