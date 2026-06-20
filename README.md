@@ -1,12 +1,12 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+<img width="1200" height="475" alt="GHBanner" src="https://polytechnic-student-id-generator.onrender.com/images/Banner5.jpg" />
 </div>
 
-# Run and deploy your AI Studio app
+# Run and deploy Your Render
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/e6058284-fbf1-4eeb-8edd-0e956c1463ef
+View your app in Render: https://polytechnic-student-id-generator.onrender.com
 
 ## Run Locally
 
