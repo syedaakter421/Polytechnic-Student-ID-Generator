@@ -726,13 +726,13 @@ function StudentManagement() {
             const frontCanvas = await html2canvas(batchFrontRef.current, {
               scale: 1.5,
               useCORS: true,
-              allowTaint: true,
+              allowTaint: false,
               backgroundColor: '#ffffff'
             });
             const backCanvas = await html2canvas(batchBackRef.current, {
               scale: 1.5,
               useCORS: true,
-              allowTaint: true,
+              allowTaint: false,
               backgroundColor: '#ffffff'
             });
             
@@ -895,7 +895,18 @@ function StudentManagement() {
     <div className="space-y-6">
       {/* Hidden container for ZIP processing */}
       {processingStudent && (
-        <div style={{ position: 'fixed', left: '-9999px', top: '-9999px' }}>
+        <div style={{
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '791px',
+          height: '2400px',
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          opacity: 0,
+          zIndex: -1000,
+          background: '#ffffff'
+        }}>
           {renderFrontSide(processingStudent)}
           <div style={{ marginTop: '50px' }}>
             {renderBackSide(processingStudent)}
