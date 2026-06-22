@@ -106,6 +106,7 @@ async function seedAdmin() {
 await seedAdmin();
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Basic Health Check for infrastructure
 app.get('/api/health', (req, res) => {
@@ -190,6 +191,7 @@ const apiLimiter = rateLimit({
   max: 200, // Limit each IP to 200 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  validate: { default: false }, // Disable header validation checks as express handles them via trust proxy
   message: { 
     error: 'Too many requests from this IP, please try again after 15 minutes. (অতিরিক্ত রিকোয়েস্ট পাঠানো হয়েছে, দয়া করে ১৫ মিনিট পর আবার চেষ্টা করুন।)' 
   }

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { CreditCard, Info, MapPin, Phone, Mail, ChevronRight, LogIn, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
+import ThreeDScroll from '../components/ThreeDScroll';
 
 export default function Home({ user }: { user: User | null }) {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -103,91 +104,101 @@ export default function Home({ user }: { user: User | null }) {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <Link to="/signup" className="group">
-                <div className="bg-white p-8 rounded-[30px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-6 h-full relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-[100px] font-black pointer-events-none">01</div>
-                  <div className="bg-gov-green/5 w-16 h-16 rounded-2xl flex items-center justify-center text-gov-green group-hover:bg-gov-green group-hover:text-white transition-colors">
-                    <UserPlus size={32} />
+              <ThreeDScroll delay={0.1}>
+                <Link to="/signup" className="group block h-full">
+                  <div className="bg-white p-8 rounded-[30px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-6 h-full relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-[100px] font-black pointer-events-none">01</div>
+                    <div className="bg-gov-green/5 w-16 h-16 rounded-2xl flex items-center justify-center text-gov-green group-hover:bg-gov-green group-hover:text-white transition-colors">
+                      <UserPlus size={32} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xl font-bengali mb-2 group-hover:text-gov-green">নতুন অ্যাকাউন্ট খোলা</h4>
+                      <p className="text-sm text-slate-500 leading-relaxed">আপনার প্রয়োজনীয় তথ্য ও ছবি দিয়ে আইডি কার্ডের জন্য প্রাথমিক রেজিস্ট্রেশন সম্পন্ন করুন।</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xl font-bengali mb-2 group-hover:text-gov-green">নতুন অ্যাকাউন্ট খোলা</h4>
-                    <p className="text-sm text-slate-500 leading-relaxed">আপনার প্রয়োজনীয় তথ্য ও ছবি দিয়ে আইডি কার্ডের জন্য প্রাথমিক রেজিস্ট্রেশন সম্পন্ন করুন।</p>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </ThreeDScroll>
 
-              <Link to="/login" className="group">
-                <div className="bg-white p-8 rounded-[30px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-6 h-full relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-[100px] font-black pointer-events-none">02</div>
-                  <div className="bg-gov-red/5 w-16 h-16 rounded-2xl flex items-center justify-center text-gov-red group-hover:bg-gov-red group-hover:text-white transition-colors">
-                    <CreditCard size={32} />
+              <ThreeDScroll delay={0.2}>
+                <Link to="/login" className="group block h-full">
+                  <div className="bg-white p-8 rounded-[30px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-6 h-full relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-[100px] font-black pointer-events-none">02</div>
+                    <div className="bg-gov-red/5 w-16 h-16 rounded-2xl flex items-center justify-center text-gov-red group-hover:bg-gov-red group-hover:text-white transition-colors">
+                      <CreditCard size={32} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xl font-bengali mb-2 group-hover:text-gov-red">ডিজিটাল আইডি কার্ড</h4>
+                      <p className="text-sm text-slate-500 leading-relaxed">অনুমোদিত শিক্ষার্থীরা যেকোনো সময় তাদের ডিজিটাল আইডি কার্ড ডাউনলোড ও প্রিন্ট করতে পারবেন।</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xl font-bengali mb-2 group-hover:text-gov-red">ডিজিটাল আইডি কার্ড</h4>
-                    <p className="text-sm text-slate-500 leading-relaxed">অনুমোদিত শিক্ষার্থীরা যেকোনো সময় তাদের ডিজিটাল আইডি কার্ড ডাউনলোড ও প্রিন্ট করতে পারবেন।</p>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </ThreeDScroll>
             </div>
 
-            <div className="bg-white rounded-[30px] p-10 border border-slate-200 shadow-sm">
-               <h3 className="text-xl font-bold mb-8 font-bengali flex items-center gap-3">
-                 <span className="w-8 h-8 bg-gov-green text-white rounded-lg flex items-center justify-center text-sm">!</span>
-                 আইডি কার্ড সংগ্রহের নিয়মাবলি:
-               </h3>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 {[
-                   { t: 'ধাপ ১', d: 'সঠিক তথ্য দিয়ে প্রোফাইল আপডেট করুন।' },
-                   { t: 'ধাপ ২', d: '৩০০x৩০০ সাইজের পরিষ্কার ছবি আপলোড দিন।' },
-                   { t: 'ধাপ ৩', d: 'সাদা কাগজে স্বাক্ষর করে ছবি আপলোড দিন।' },
-                   { t: 'ধাপ ৪', d: 'এডমিন অনুমোদন দিলে কার্ড ডাউনলোড করুন।' }
-                 ].map(step => (
-                   <div key={step.t} className="flex gap-4">
-                     <div className="text-gov-green font-black text-2xl opacity-20">{step.t.split(' ')[1]}</div>
-                     <div>
-                       <p className="font-bold text-slate-800 font-bengali">{step.t}</p>
-                       <p className="text-sm text-slate-500 font-bengali">{step.d}</p>
+            <ThreeDScroll delay={0.3}>
+              <div className="bg-white rounded-[30px] p-10 border border-slate-200 shadow-sm">
+                 <h3 className="text-xl font-bold mb-8 font-bengali flex items-center gap-3">
+                   <span className="w-8 h-8 bg-gov-green text-white rounded-lg flex items-center justify-center text-sm">!</span>
+                   আইডি কার্ড সংগ্রহের নিয়মাবলি:
+                 </h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   {[
+                     { t: 'ধাপ ১', d: 'সঠিক তথ্য দিয়ে প্রোফাইল আপডেট করুন।' },
+                     { t: 'ধাপ ২', d: '৩০০x৩০০ সাইজের পরিষ্কার ছবি আপলোড দিন।' },
+                     { t: 'ধাপ ৩', d: 'সাদা কাগজে স্বাক্ষর করে ছবি আপলোড দিন।' },
+                     { t: 'ধাপ ৪', d: 'এডমিন অনুমোদন দিলে কার্ড ডাউনলোড করুন।' }
+                   ].map(step => (
+                     <div key={step.t} className="flex gap-4">
+                       <div className="text-gov-green font-black text-2xl opacity-20">{step.t.split(' ')[1]}</div>
+                       <div>
+                         <p className="font-bold text-slate-800 font-bengali">{step.t}</p>
+                         <p className="text-sm text-slate-500 font-bengali">{step.d}</p>
+                       </div>
                      </div>
-                   </div>
-                 ))}
-               </div>
-            </div>
+                   ))}
+                 </div>
+              </div>
+            </ThreeDScroll>
           </div>
 
           {/* Right: Sidebar Sidebar */}
           <div className="lg:col-span-4 space-y-8">
-            <div className="bg-white rounded-[30px] border border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-900 p-6">
-                <h3 className="text-white font-bold font-bengali tracking-tight uppercase text-sm">গুরুত্বপূর্ণ লিংক</h3>
+            <ThreeDScroll delay={0.2}>
+              <div className="bg-white rounded-[30px] border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-slate-900 p-6">
+                  <h3 className="text-white font-bold font-bengali tracking-tight uppercase text-sm">গুরুত্বপূর্ণ লিংক</h3>
+                </div>
+                <div className="p-2 space-y-1">
+                  {[
+                    { name: 'TEMIS', url: 'https://temis.gov.bd/' },
+                    { name: 'শিক্ষা মন্ত্রণালয়', url: 'https://moedu.gov.bd/' },
+                    { name: 'কারিগরি ও মাদ্রাসা শিক্ষা বিভাগ', url: 'https://tmed.gov.bd/' },
+                    { name: 'কারিগরি শিক্ষা অধিদপ্তর', url: 'http://dte.gov.bd/' },
+                    { name: 'বাংলাদেশ কারিগরি শিক্ষা বোর্ড', url: 'http://bteb.gov.bd/' },
+                    { name: 'BTEB ই-সেবা', url: 'http://eservice.bteb.gov.bd/' },
+                    { name: 'অনলাইনে বদলি', url: 'http://onserv.dte.gov.bd/' }
+                  ].map(link => (
+                    <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="p-4 block flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-all group">
+                      <span className="font-bengali text-sm font-medium text-slate-600 group-hover:text-gov-green">{link.name}</span>
+                      <ChevronRight size={16} className="text-slate-300 group-hover:text-gov-green" />
+                    </a>
+                  ))}
+                </div>
               </div>
-              <div className="p-2 space-y-1">
-                {[
-                  { name: 'TEMIS', url: 'https://temis.gov.bd/' },
-                  { name: 'শিক্ষা মন্ত্রণালয়', url: 'https://moedu.gov.bd/' },
-                  { name: 'কারিগরি ও মাদ্রাসা শিক্ষা বিভাগ', url: 'https://tmed.gov.bd/' },
-                  { name: 'কারিগরি শিক্ষা অধিদপ্তর', url: 'http://dte.gov.bd/' },
-                  { name: 'বাংলাদেশ কারিগরি শিক্ষা বোর্ড', url: 'http://bteb.gov.bd/' },
-                  { name: 'BTEB ই-সেবা', url: 'http://eservice.bteb.gov.bd/' },
-                  { name: 'অনলাইনে বদলি', url: 'http://onserv.dte.gov.bd/' }
-                ].map(link => (
-                  <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="p-4 block flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-all group">
-                    <span className="font-bengali text-sm font-medium text-slate-600 group-hover:text-gov-green">{link.name}</span>
-                    <ChevronRight size={16} className="text-slate-300 group-hover:text-gov-green" />
-                  </a>
-                ))}
-              </div>
-            </div>
+            </ThreeDScroll>
 
-            <div className="bg-gov-green p-8 rounded-[30px] text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Mail size={120} />
+            <ThreeDScroll delay={0.4}>
+              <div className="bg-gov-green p-8 rounded-[30px] text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Mail size={120} />
+                </div>
+                <h3 className="font-bold text-xl mb-4 font-bengali">সহযোগিতা প্রয়োজন?</h3>
+                <p className="text-sm opacity-80 mb-6 font-bengali leading-relaxed">রেজিস্ট্রেশন বা কার্ড ডাউনলোড করতে কোনো সমস্যায় পড়লে আমাদের হেল্পডেস্কে যোগাযোগ করুন।</p>
+                <a href="tel:+8802997714718" className="bg-white text-gov-green px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all">
+                  <Phone size={18} /> কল করুন
+                </a>
               </div>
-              <h3 className="font-bold text-xl mb-4 font-bengali">সহযোগিতা প্রয়োজন?</h3>
-              <p className="text-sm opacity-80 mb-6 font-bengali leading-relaxed">রেজিস্ট্রেশন বা কার্ড ডাউনলোড করতে কোনো সমস্যায় পড়লে আমাদের হেল্পডেস্কে যোগাযোগ করুন।</p>
-              <a href="tel:+8802997714718" className="bg-white text-gov-green px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all">
-                <Phone size={18} /> কল করুন
-              </a>
-            </div>
+            </ThreeDScroll>
           </div>
 
         </div>

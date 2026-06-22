@@ -8,9 +8,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
 import { safeFetch } from '../lib/fetchUtils';
-import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { toPng } from 'html-to-image';
+import { toPng, toBlob } from 'html-to-image';
 import Footer from '../components/Footer';
 
 export default function AdminDashboard({ user, onLogout }: { user: User, onLogout: () => void }) {
@@ -689,19 +688,26 @@ function StudentManagement() {
     doc.save('student_list.pdf');
   };
 
-  const exportToZIP = async () => {
-    const studentsToExport = filtered;
+  const downloadAllNewPNGs = async () => {
+    // Filter to only include NEW (undownloaded) students matching current filters
+    const studentsToExport = students.filter(s => {
+      const matchesSearch = s.full_name_en.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            s.roll_number.includes(searchTerm);
+      const matchesSession = !sessionFilter || s.session === sessionFilter;
+      const matchesTech = !techFilter || s.technology === techFilter;
+      
+      return !s.is_downloaded && matchesSearch && matchesSession && matchesTech;
+    });
+
     if (studentsToExport.length === 0) {
-      alert('ডাউনলোড করার মতো কোনো শিক্ষার্থী পাওয়া যায়নি।');
+      alert('ডাউনলোড করার মতো কোনো নতুন (NEW) আইডি কার্ড পাওয়া যায়নি।');
       return;
     }
 
-    if (!confirm(`${studentsToExport.length} জন শিক্ষার্থীর আইডি কার্ড জিপ ফাইলে ডাউনলোড হবে। অবিরত রাখতে চান?`)) return;
+    if (!confirm(`${studentsToExport.length} জন শিক্ষার্থীর নতুন (NEW) আইডি কার্ড পিএনজি (PNG) ফরম্যাটে ডাউনলোড হবে। অবিরত রাখতে চান?`)) return;
 
     setIsZipping(true);
     setZipProgress(0);
-    const zip = new JSZip();
-    const options = { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' };
     let successCount = 0;
 
     try {
@@ -717,12 +723,37 @@ function StudentManagement() {
         
         try {
           if (batchFrontRef.current && batchBackRef.current) {
-            const frontData = await toPng(batchFrontRef.current, options);
-            const backData = await toPng(batchBackRef.current, options);
+            const frontCanvas = await html2canvas(batchFrontRef.current, {
+              scale: 1.5,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff'
+            });
+            const backCanvas = await html2canvas(batchBackRef.current, {
+              scale: 1.5,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff'
+            });
             
-            if (frontData && backData) {
-              zip.file(`${student.roll_number}_FRONT.png`, frontData.split(',')[1], { base64: true });
-              zip.file(`${student.roll_number}_BACK.png`, backData.split(',')[1], { base64: true });
+            if (frontCanvas && backCanvas) {
+              await new Promise<void>((resolveFront) => {
+                frontCanvas.toBlob((blob) => {
+                  if (blob) {
+                    saveAs(blob, `${student.roll_number}_FRONT.png`);
+                  }
+                  resolveFront();
+                }, 'image/png', 1.0);
+              });
+
+              await new Promise<void>((resolveBack) => {
+                backCanvas.toBlob((blob) => {
+                  if (blob) {
+                    saveAs(blob, `${student.roll_number}_BACK.png`);
+                  }
+                  resolveBack();
+                }, 'image/png', 1.0);
+              });
               
               if (!student.is_downloaded) {
                 await safeFetch(`/api/admin/students/${student.id}/downloaded`, { method: 'PATCH' });
@@ -731,21 +762,18 @@ function StudentManagement() {
             }
           }
         } catch (singleErr) {
-          console.error(`Error zipping student ${student.roll_number}:`, singleErr);
+          console.error(`Error saving student ${student.roll_number} PNG:`, singleErr);
         }
       }
 
       setZipProgress(100);
-      if (successCount > 0) {
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `ID_CARDS_${new Date().toISOString().split('T')[0]}.zip`);
-      } else {
+      if (successCount === 0) {
         alert('কোনো আইডি কার্ড জেনারেট করা সম্ভব হয়নি। অনুগ্রহ করে শিক্ষার্থীদের ছবি ও তথ্য পুনরায় চেক করুন।');
       }
       fetchStudents();
     } catch (err) {
-      console.error('ZIP Error:', err);
-      alert('জিপ ফাইল তৈরি করতে সমস্যা হয়েছে।');
+      console.error('Download Error:', err);
+      alert('আইডি কার্ড ডাউনলোড করতে সমস্যা হয়েছে।');
     } finally {
       setIsZipping(false);
       setProcessingStudent(null);
@@ -882,7 +910,7 @@ function StudentManagement() {
               <Download size={40} />
             </div>
             <div>
-              <h4 className="text-xl font-black font-bengali">জিপ ফাইল তৈরি হচ্ছে...</h4>
+              <h4 className="text-xl font-black font-bengali">আইডি কার্ড ডাউনলোড হচ্ছে...</h4>
               <p className="text-sm text-slate-400 mt-2 font-bold uppercase tracking-widest">{zipProgress}% COMPLETED</p>
             </div>
             <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
@@ -932,7 +960,7 @@ function StudentManagement() {
           </select>
 
           <button 
-            onClick={exportToZIP}
+            onClick={downloadAllNewPNGs}
             disabled={isZipping}
             className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all font-bengali shadow-lg disabled:opacity-90 ${
               isZipping 
@@ -948,7 +976,7 @@ function StudentManagement() {
             ) : (
               <>
                 <Download size={18} />
-                <span>সব ডাউনলোড (ZIP)</span>
+                <span>সকল NEW ডাউনলোড (PNG)</span>
               </>
             )}
           </button>
