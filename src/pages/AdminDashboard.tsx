@@ -12,6 +12,54 @@ import { saveAs } from 'file-saver';
 import { toPng, toBlob } from 'html-to-image';
 import Footer from '../components/Footer';
 
+const convertToBase64 = (url: string): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!url) {
+      resolve('');
+      return;
+    }
+    if (url.startsWith('data:')) {
+      resolve(url);
+      return;
+    }
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(url);
+        reader.readAsDataURL(blob);
+      })
+      .catch((err) => {
+        console.warn(`Fetch base64 conversion failed for ${url}, trying canvas fallback:`, err);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/png'));
+              return;
+            }
+          } catch (e) {
+            console.error('Canvas image conversion failed:', e);
+          }
+          resolve(url);
+        };
+        img.onerror = () => resolve(url);
+        img.src = url;
+      });
+  });
+};
+
 export default function AdminDashboard({ user, onLogout }: { user: User, onLogout: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -551,6 +599,10 @@ function StudentManagement() {
   const [isZipping, setIsZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
   const [processingStudent, setProcessingStudent] = useState<Student | null>(null);
+  const [currentStudentPhotoBase64, setCurrentStudentPhotoBase64] = useState('');
+  const [currentRegistrarSigBase64, setCurrentRegistrarSigBase64] = useState('');
+  const [currentPrincipalSigBase64, setCurrentPrincipalSigBase64] = useState('');
+  const [currentGovLogoBase64, setCurrentGovLogoBase64] = useState('');
   const batchFrontRef = useRef<HTMLDivElement>(null);
   const batchBackRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
@@ -718,41 +770,55 @@ function StudentManagement() {
         setProcessingStudent(student);
         setZipProgress(Math.round((i / studentsToExport.length) * 100));
         
+        try {
+          const photoB64 = student.photo_path ? await convertToBase64(student.photo_path).catch(() => '') : '';
+          const regB64 = settings?.registrar_signature_path ? await convertToBase64(settings.registrar_signature_path).catch(() => '') : '';
+          const priB64 = settings?.principal_signature_path ? await convertToBase64(settings.principal_signature_path).catch(() => '') : '';
+          const logoB64 = await convertToBase64("https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png").catch(() => '');
+
+          setCurrentStudentPhotoBase64(photoB64);
+          setCurrentRegistrarSigBase64(regB64);
+          setCurrentPrincipalSigBase64(priB64);
+          setCurrentGovLogoBase64(logoB64);
+        } catch (err) {
+          console.error("Base64 preloading error:", err);
+        }
+
         // Wait for rendering & images
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 1000));
         
         try {
           if (batchFrontRef.current && batchBackRef.current) {
-            const frontCanvas = await html2canvas(batchFrontRef.current, {
-              scale: 1.5,
-              useCORS: true,
-              allowTaint: false,
-              backgroundColor: '#ffffff'
-            });
-            const backCanvas = await html2canvas(batchBackRef.current, {
-              scale: 1.5,
-              useCORS: true,
-              allowTaint: false,
-              backgroundColor: '#ffffff'
-            });
-            
-            if (frontCanvas && backCanvas) {
-              await new Promise<void>((resolveFront) => {
-                frontCanvas.toBlob((blob) => {
-                  if (blob) {
-                    saveAs(blob, `${student.roll_number}_FRONT.png`);
-                  }
-                  resolveFront();
-                }, 'image/png', 1.0);
-              });
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const downloadOptions = {
+              pixelRatio: isMobile ? 1.5 : 2,
+              skipFonts: false,
+              cacheBust: true,
+              backgroundColor: '#ffffff',
+            };
 
-              await new Promise<void>((resolveBack) => {
-                backCanvas.toBlob((blob) => {
-                  if (blob) {
-                    saveAs(blob, `${student.roll_number}_BACK.png`);
-                  }
-                  resolveBack();
-                }, 'image/png', 1.0);
+            // Workaround for rendering: Pre-warm the canvas render pipeline twice
+            await toPng(batchFrontRef.current, downloadOptions).catch(() => {});
+            await toPng(batchBackRef.current, downloadOptions).catch(() => {});
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            const dataUrlFront = await toPng(batchFrontRef.current, downloadOptions);
+            const dataUrlBack = await toPng(batchBackRef.current, downloadOptions);
+            
+            if (dataUrlFront && dataUrlBack) {
+              const linkFront = document.createElement('a');
+              linkFront.download = `${student.roll_number}_FRONT.png`;
+              linkFront.href = dataUrlFront;
+              linkFront.click();
+
+              await new Promise<void>((resolve) => {
+                setTimeout(() => {
+                  const linkBack = document.createElement('a');
+                  linkBack.download = `${student.roll_number}_BACK.png`;
+                  linkBack.href = dataUrlBack;
+                  linkBack.click();
+                  resolve();
+                }, 450);
               });
               
               if (!student.is_downloaded) {
@@ -786,7 +852,7 @@ function StudentManagement() {
           <div className="pt-8">
             <div className="flex justify-center mb-4">
               <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png" 
+                src={currentGovLogoBase64 || "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_Seal_of_Bangladesh.svg/300px-Government_Seal_of_Bangladesh.svg.png"} 
                 className="w-[140px] h-[140px] object-contain" 
                 alt="" 
                 crossOrigin="anonymous" 
@@ -800,8 +866,8 @@ function StudentManagement() {
             <div className="w-[340px] bg-[#ffcc29] -mt-1 p-[8px] rounded-b-[160px] h-[360px] shadow-xl z-10">
               <div className="text-[28px] font-black text-slate-800 mb-2 mt-2">Student ID Card</div>
               <div className="bg-slate-200 w-[260px] h-[280px] mx-auto rounded-b-[120px] border-[6px] border-white overflow-hidden shadow-inner flex items-center justify-center">
-                {student.photo_path ? (
-                  <img src={student.photo_path} className="w-full h-full object-cover" alt="" crossOrigin="anonymous" />
+                {currentStudentPhotoBase64 || student.photo_path ? (
+                  <img src={currentStudentPhotoBase64 || student.photo_path} className="w-full h-full object-cover" alt="" crossOrigin="anonymous" />
                 ) : (
                   <UserIcon size={100} className="text-slate-400" />
                 )}
@@ -831,13 +897,13 @@ function StudentManagement() {
           <div className="absolute bottom-16 left-0 w-full px-20 flex justify-between">
             <div className="text-center w-[200px]">
               <div className="h-20 flex items-end justify-center mb-1">
-                {settings?.registrar_signature_path && <img src={settings.registrar_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
+                {(currentRegistrarSigBase64 || settings?.registrar_signature_path) && <img src={currentRegistrarSigBase64 || settings.registrar_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
               </div>
               <div className="border-t-2 border-[#002d3a] pt-1 font-black text-[22px]">Registrar</div>
             </div>
             <div className="text-center w-[200px]">
               <div className="h-20 flex items-end justify-center mb-1">
-                {settings?.principal_signature_path && <img src={settings.principal_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
+                {(currentPrincipalSigBase64 || settings?.principal_signature_path) && <img src={currentPrincipalSigBase64 || settings.principal_signature_path} className="max-h-full" alt="" crossOrigin="anonymous" />}
               </div>
               <div className="border-t-2 border-[#002d3a] pt-1 font-black text-[22px]">Principal</div>
             </div>
