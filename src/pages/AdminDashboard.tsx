@@ -60,6 +60,65 @@ const convertToBase64 = (url: string): Promise<string> => {
   });
 };
 
+const isExpired = (validUpto: string | undefined): boolean => {
+  if (!validUpto) return false;
+  const cleanStr = validUpto.trim().toLowerCase();
+  if (!cleanStr) return false;
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth(); // 0-indexed
+
+  // Try parsing directly as date
+  const parsedTime = Date.parse(validUpto);
+  if (!isNaN(parsedTime)) {
+    return new Date(parsedTime) < currentDate;
+  }
+
+  // Handle year-only or month-year formats
+  const yearMatch = cleanStr.match(/\b(20\d{2})\b/);
+  if (yearMatch) {
+    const year = parseInt(yearMatch[1], 10);
+    const months = [
+      ['january', 'jan', '01', '1'],
+      ['february', 'feb', '02', '2'],
+      ['march', 'mar', '03', '3'],
+      ['april', 'apr', '04', '4'],
+      ['may', '05', '5'],
+      ['june', 'jun', '06', '6'],
+      ['july', 'jul', '07', '7'],
+      ['august', 'aug', '08', '8'],
+      ['september', 'sep', '09', '9'],
+      ['october', 'oct', '10'],
+      ['november', 'nov', '11'],
+      ['december', 'dec', '12']
+    ];
+
+    let foundMonthIndex = -1;
+    for (let i = 0; i < months.length; i++) {
+      for (const alias of months[i]) {
+        const regex = new RegExp(`\\b${alias}\\b`);
+        if (regex.test(cleanStr)) {
+          foundMonthIndex = i;
+          break;
+        }
+      }
+      if (foundMonthIndex !== -1) break;
+    }
+
+    if (foundMonthIndex !== -1) {
+      if (year < currentYear) return true;
+      if (year > currentYear) return false;
+      return foundMonthIndex < currentMonth;
+    } else {
+      // Year only
+      return year < currentYear;
+    }
+  }
+
+  return false;
+};
+
 export default function AdminDashboard({ user, onLogout }: { user: User, onLogout: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -587,7 +646,7 @@ function StudentManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sessionFilter, setSessionFilter] = useState('');
   const [techFilter, setTechFilter] = useState('');
-  const [downloadFilter, setDownloadFilter] = useState<'all' | 'new' | 'downloaded'>('all');
+  const [downloadFilter, setDownloadFilter] = useState<'all' | 'new' | 'downloaded' | 'expired'>('all');
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [modalMode, setModalMode] = useState<'details' | 'idcard' | null>(null);
@@ -692,7 +751,8 @@ function StudentManagement() {
       const matchesTech = !techFilter || s.technology === techFilter;
       const matchesDownload = downloadFilter === 'all' || 
                               (downloadFilter === 'new' && !s.is_downloaded) || 
-                              (downloadFilter === 'downloaded' && s.is_downloaded);
+                              (downloadFilter === 'downloaded' && s.is_downloaded) ||
+                              (downloadFilter === 'expired' && isExpired(s.valid_upto));
       return matchesSearch && matchesSession && matchesTech && matchesDownload;
     })
     .sort((a, b) => {
@@ -1034,29 +1094,9 @@ function StudentManagement() {
             <option value="all">সকল আইডি কার্ড</option>
             <option value="new">নতুন আইডি কার্ড (NEW)</option>
             <option value="downloaded">ডাউনলোডকৃত কার্ড</option>
+            <option value="expired">মেয়াদ উত্তীর্ণ আইডি কার্ড</option>
           </select>
 
-          <button 
-            onClick={downloadAllNewPNGs}
-            disabled={isZipping}
-            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all font-bengali shadow-lg disabled:opacity-90 ${
-              isZipping 
-              ? 'bg-gov-green/80 text-white shadow-gov-green/10 cursor-wait' 
-              : 'bg-gov-green text-white hover:bg-gov-green-dark shadow-gov-green/10'
-            }`}
-          >
-            {isZipping ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>ডাউনলোড হচ্ছে ({zipProgress}%)</span>
-              </>
-            ) : (
-              <>
-                <Download size={18} />
-                <span>সকল NEW ডাউনলোড (PNG)</span>
-              </>
-            )}
-          </button>
           <div className="relative flex-1 md:flex-none">
              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
              <input 
