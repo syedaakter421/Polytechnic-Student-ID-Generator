@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { User } from '../types';
+import { User } from '../../types';
 import { Link } from 'react-router-dom';
 import { CreditCard, Info, MapPin, Phone, Mail, ChevronRight, LogIn, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Footer from '../components/Footer';
-import ThreeDScroll from '../components/ThreeDScroll';
+import Footer from '../Footer';
+import ThreeDScroll from '../ThreeDScroll';
 
 export default function Home({ user }: { user: User | null }) {
   const [currentSlide, setCurrentSlide] = useState(0);

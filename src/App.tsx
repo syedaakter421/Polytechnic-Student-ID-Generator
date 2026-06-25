@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import StudentDashboard from './pages/StudentDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import Home from './components/pages/Home';
+import Login from './components/pages/Login';
+import Signup from './components/pages/Signup';
+import StudentDashboard from './components/pages/StudentDashboard';
+import AdminDashboard from './components/pages/AdminDashboard';
 import { User } from './types';
 
 export default function App() {

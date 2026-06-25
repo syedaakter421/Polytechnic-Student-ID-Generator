@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { LogIn, User, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { User as UserType } from '../types';
+import { User as UserType } from '../../types';
 
-import { safeFetch } from '../lib/fetchUtils';
+import { safeFetch } from '../../lib/fetchUtils';
 
 export default function Login({ onLogin }: { onLogin: (user: UserType, token: string) => void }) {
   const [isAdmin, setIsAdmin] = useState(false);

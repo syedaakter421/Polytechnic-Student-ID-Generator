@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Student, SystemSettings } from '../types';
+import { User, Student, SystemSettings } from '../../types';
 import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu, AlertTriangle, Loader2 } from 'lucide-react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import IDCard from '../components/IDCard';
+import IDCard from '../IDCard';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
-import { safeFetch } from '../lib/fetchUtils';
+import { safeFetch } from '../../lib/fetchUtils';
 import { saveAs } from 'file-saver';
 import { toPng, toBlob } from 'html-to-image';
-import Footer from '../components/Footer';
+import Footer from '../Footer';
 
 const convertToBase64 = (url: string): Promise<string> => {
   return new Promise((resolve) => {
@@ -624,9 +624,7 @@ function AdminHome() {
                    <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 font-medium flex items-center gap-2">
                          {student.full_name_en}
-                         {!student.is_downloaded && (
-                           <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">New</span>
-                         )}
+                         
                        </td>
                       <td className="px-6 py-4">{student.technology}</td>
                       <td className="px-6 py-4 text-gray-500">{student.roll_number}</td>
@@ -1092,8 +1090,7 @@ function StudentManagement() {
             onChange={e => setDownloadFilter(e.target.value as any)}
           >
             <option value="all">সকল আইডি কার্ড</option>
-            <option value="new">নতুন আইডি কার্ড (NEW)</option>
-            <option value="downloaded">ডাউনলোডকৃত কার্ড</option>
+            <option value="new">নতুন আইডি কার্ড</option>
             <option value="expired">মেয়াদ উত্তীর্ণ আইডি কার্ড</option>
           </select>
 
@@ -1211,9 +1208,7 @@ function StudentManagement() {
                              <div className="whitespace-nowrap">
                                <div className="flex items-center gap-2">
                                  <p className="font-bold text-slate-800">{student.full_name_en}</p>
-                                 {!student.is_downloaded && (
-                                   <span className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md animate-pulse">NEW</span>
-                                 )}
+                                 
                                </div>
                                <p className="text-xs text-gray-500 font-bengali">{student.full_name_bn}</p>
                              </div>
@@ -1294,9 +1289,7 @@ function StudentManagement() {
                         <div className="min-w-0">
                            <div className="flex items-center gap-2">
                              <h4 className="font-extrabold text-slate-800 text-sm truncate max-w-[120px] xs:max-w-[160px]">{student.full_name_en}</h4>
-                             {!student.is_downloaded && (
-                               <span className="bg-amber-500 text-white text-[8px] font-black px-1 py-0.5 rounded animate-pulse">NEW</span>
-                             )}
+                             
                            </div>
                            <p className="text-[11px] font-bold text-slate-400">Roll: {student.roll_number}</p>
                            <div className="mt-1">
@@ -1474,15 +1467,7 @@ function StudentManagement() {
                   <div className="flex justify-center -mt-6 md:-mt-10 scale-75 md:scale-90 lg:scale-100 transition-transform origin-top">
                     <IDCard 
                       user={selectedStudent as any} 
-                      onDownload={async () => {
-                        try {
-                          await safeFetch(`/api/admin/students/${selectedStudent.id}/downloaded`, { method: 'PATCH' });
-                          fetchStudents(); // Refresh student list
-                          // Also refresh stats implicitly if needed, or just let the user navigate
-                        } catch (e) {
-                          console.error('Mark as downloaded failed:', e);
-                        }
-                      }}
+
                     />
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import { safeFetch } from '../lib/fetchUtils';
+import { safeFetch } from '../../lib/fetchUtils';
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';

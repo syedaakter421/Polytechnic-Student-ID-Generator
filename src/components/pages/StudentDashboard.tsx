@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User } from '../types';
+import { User } from '../../types';
 import { LogOut, Home, User as UserIcon, CreditCard, Bell, Clock, CheckCircle, Pencil, Check, Camera, Save, X, Menu } from 'lucide-react';
-import IDCard from '../components/IDCard';
-import Footer from '../components/Footer';
+import IDCard from '../IDCard';
+import Footer from '../Footer';
 import { NavLink, Routes, Route, useNavigate, Link } from 'react-router-dom';
-import { safeFetch } from '../lib/fetchUtils';
+import { safeFetch } from '../../lib/fetchUtils';
 
 export default function StudentDashboard({ user, onLogout, onUpdateUser }: { user: User, onLogout: () => void, onUpdateUser: (user: User) => void }) {
   const navigate = useNavigate();
