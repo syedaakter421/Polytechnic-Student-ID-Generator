@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { User, SystemSettings } from '../types';
 import { Download, Printer, ShieldCheck, User as UserIcon, Loader2, Check } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -65,7 +64,6 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   const backCardRef = useRef<HTMLDivElement>(null);
   const frontCaptureRef = useRef<HTMLDivElement>(null);
   const backCaptureRef = useRef<HTMLDivElement>(null);
-  const [qrCode, setQrCode] = useState('');
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,11 +80,6 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
   }, []);
 
   useEffect(() => {
-    QRCode.toDataURL(`ID:${user.roll_number}|Name:${user.full_name_en}`, {
-      margin: 1,
-      width: 100,
-    }).then(setQrCode);
-
     setError(null);
     safeFetch('/api/settings')
       .then(setSettings)

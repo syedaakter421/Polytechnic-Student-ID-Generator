@@ -71,7 +71,7 @@ export default function Home({ user }: { user: User | null }) {
           >
             <div className="inline-block px-4 py-1 bg-gov-red text-[10px] md:text-xs font-bold rounded-full mb-4 md:mb-6 tracking-widest uppercase mx-auto">Official Student Portal</div>
             <h2 className="text-3xl md:text-5xl font-black font-bengali mb-4 md:mb-6 tracking-tight leading-tight">আপনার স্মার্ট আইডি কার্ড <br className="hidden md:block"/> এখন এক ক্লিকেই</h2>
-            <p className="text-base md:text-xl mb-6 md:mb-10 opacity-70 leading-relaxed max-w-lg mx-auto">শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউটের ছাত্রছাত্রীদের জন্য আধুনিক এবং স্বয়ংক্রিয় পরিচয়পত্র জেনারেশন সিস্টেম।</p>
+            <p className="text-base md:text-xl mb-6 md:mb-10 opacity-70 leading-relaxed max-w-lg mx-auto">শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউটের ছাত্রছাত্রীদের জন্য আধুনিক এবং স্বয়ংক্রিয় পরিচয়পত্র জেনারেটর সিস্টেম।</p>
             <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center w-full">
               {user ? (
                 <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="bg-gov-green text-white px-8 md:px-12 py-3 md:py-4 rounded-xl font-bold shadow-2xl hover:scale-105 transition-transform flex items-center justify-center gap-2 group text-sm md:text-base">
