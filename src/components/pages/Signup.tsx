@@ -5,12 +5,10 @@ import { motion } from 'motion/react';
 import { UserPlus, ArrowLeft, Upload, Camera, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 const DEPARTMENTS = [
-'Civil Technology',
-'Electrical Technology',
-'Electronics Technology',
-'Computer Technology',
-'RAC Technology',
-'Mechanical Integrated Technology'
+  'Civil Technology',
+  'Electrical Technology',
+  'Electronics Technology',
+  'Computer Science & Technology'
 ];
 
 export default function Signup() {
