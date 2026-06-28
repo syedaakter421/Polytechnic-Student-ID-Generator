@@ -26,8 +26,8 @@ export default function Home({ user }: { user: User | null }) {
             <img src="images/logo.png" className="w-full h-full object-contain" alt="Logo" />
           </div>
           <div>
-            <h1 className="text-sm md:text-lg font-bold leading-tight font-bengali">শেরপুর সরকারি পলিটেকনিক ইনস্টিটিউট</h1>
-            <p className="text-[9px] md:text-[11px] opacity-90 tracking-wide uppercase">Sherpur Govt. Polytechnic Institute</p>
+            <h1 className="text-sm md:text-lg font-bold leading-tight font-bengali">স্টুডেন্ট আইডি জেনারেটর</h1>
+            <p className="text-[9px] md:text-[11px] opacity-90 tracking-wide uppercase">Student ID Generator</p>
           </div>
         </div>
         <div className="flex items-center gap-6">
