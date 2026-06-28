@@ -278,6 +278,13 @@ function AdminProfile({ user }: { user: User }) {
         body: JSON.stringify(payload)
       });
 
+      if (formData.password) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+        return;
+      }
+
       setStatus({ type: 'success', message: data.message });
       setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
       

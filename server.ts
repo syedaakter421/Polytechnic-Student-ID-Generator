@@ -42,7 +42,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Security & Auth Middlewares ---
-function authenticateToken(req: any, res: Response, next: any) {
+async function authenticateToken(req: any, res: Response, next: any) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -50,13 +50,27 @@ function authenticateToken(req: any, res: Response, next: any) {
     return res.status(401).json({ error: 'টোকেন পাওয়া যায়নি (Unauthorized)' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) {
-      return res.status(403).json({ error: 'অবৈধ টোকেন (Forbidden)' });
+  try {
+    const user: any = jwt.verify(token, JWT_SECRET);
+    
+    // Additional security check for admin: verify if password was changed
+    if (user && user.role === 'admin') {
+      const { data: admin, error } = await supabase
+        .from('admins')
+        .select('password')
+        .eq('id', user.id)
+        .single();
+        
+      if (error || !admin || admin.password !== user.passwordHash) {
+        return res.status(401).json({ error: 'পাসওয়ার্ড পরিবর্তিত হয়েছে, পুনরায় লগইন করুন।' });
+      }
     }
+    
     req.user = user;
     next();
-  });
+  } catch (err) {
+    return res.status(403).json({ error: 'অবৈধ টোকেন (Forbidden)' });
+  }
 }
 
 function requireAdmin(req: any, res: Response, next: any) {
@@ -241,7 +255,7 @@ const storage = multer.diskStorage({
       
       if (!error && admin) {
         if (bcrypt.compareSync(password, admin.password)) {
-          const token = jwt.sign({ id: admin.id, role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
+          const token = jwt.sign({ id: admin.id, role: 'admin', passwordHash: admin.password }, JWT_SECRET, { expiresIn: '1d' });
           return res.json({ 
             token, 
             user: { 

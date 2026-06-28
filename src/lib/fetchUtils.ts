@@ -53,6 +53,14 @@ export async function safeFetch(url: string, options?: RequestInit) {
       
       const data = await response.json();
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+            return;
+          }
+        }
         throw new Error(data.error || "An unexpected error occurred.");
       }
       
