@@ -400,7 +400,7 @@ export default function IDCard({ user, onDownload }: { user: User, onDownload?: 
             </div>
             </div>
             
-            <div className="absolute left-6 top-[30%] -rotate-90 origin-left">
+            <div className="absolute left-6 top-[75%] -rotate-90 origin-left">
                <p className="text-[14px] font-bold text-slate-300 tracking-widest">{user.roll_number} {user.technology}</p>
             </div>
           </div>
