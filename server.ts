@@ -95,21 +95,37 @@ function requireStudentOrAdmin(req: any, res: Response, next: any) {
 async function seedAdmin() {
   try {
     console.log('Ensuring default admin exists...');
+    
+    // Check if the admin already exists to prevent resetting their changed password on server restart
+    const { data: existingAdmin, error: checkError } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('email', 'admin@gmail.com')
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing admin:', checkError.message);
+      return;
+    }
+
+    if (existingAdmin) {
+      console.log('✅ Admin already exists. Skipping seed to preserve password.');
+      return;
+    }
+
     const hashedPassword = bcrypt.hashSync('admin123', 10);
     
-    // We use upsert with onConflict on username or email
-    // This ensures if admin@gmail.com exists, its password is reset to admin123
-    const { error } = await supabase.from('admins').upsert({
+    const { error } = await supabase.from('admins').insert({
       username: 'admin',
       email: 'admin@gmail.com',
       password: hashedPassword,
       full_name: 'Super Admin'
-    }, { onConflict: 'email' });
+    });
 
     if (error) {
       console.error('Error seeding admin:', error.message);
     } else {
-      console.log('✅ Default admin ensured: admin@gmail.com / admin123');
+      console.log('✅ Default admin seeded: admin@gmail.com / admin123');
     }
   } catch (err) {
     console.error('Seed error:', err);

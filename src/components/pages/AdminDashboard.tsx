@@ -594,7 +594,7 @@ function AdminHome() {
             }
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           });
-        setRecent(sorted.slice(0, 5));
+        setRecent(sorted);
       })
       .catch((err) => console.error('Recent students error:', err));
   }, []);
