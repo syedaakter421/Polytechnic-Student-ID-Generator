@@ -1,3 +1,7 @@
+## 🏆 GitHub Trophies
+
+![](https://github-profile-trophy-sabbir16.vercel.app/?username=Jkislam&theme=algolia&row=2&column=4&margin-w=15&margin-h=15&no-frame=true&format=svg)
+
 # পলিটেকনিক স্টুডেন্ট আইডি কার্ড জেনারেটর সিস্টেম
 
 বাংলাদেশ পলিটেকনিক শিক্ষার্থীদের জন্য একটি ডিজিটাল আইডি কার্ড জেনারেটর  সিস্টেম। ২০২৬ সালের আধুনিক যুগে এসেও কাগজের ম্যানুয়াল আইডি কার্ড প্রিন্ট করা অত্যন্তে কষ্ট কর - সেই উদ্দেশ্যেই এই সিস্টেমটি তৈরি করা হয়েছে।
