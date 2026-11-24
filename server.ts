@@ -13,6 +13,13 @@ import multer from 'multer';
 import fs from 'fs';
 import https from 'https';
 import rateLimit from 'express-rate-limit';
+import {
+  parsePdfBuffer,
+  parseCsvBuffer,
+  normalizeShift,
+  normalizeSession,
+  verifyStudentAgainstRegistry,
+} from './server/registryParser.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -259,6 +266,19 @@ const storage = multer.diskStorage({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
   });
 
+  const registryUpload = multer({
+    storage: multer.memoryStorage(),
+    fileFilter: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (ext === '.pdf' || ext === '.csv' || file.mimetype === 'application/pdf' || file.mimetype === 'text/csv') {
+        cb(null, true);
+      } else {
+        cb(new Error('শুধুমাত্র PDF অথবা CSV ফাইল আপলোড করা যাবে।'));
+      }
+    },
+    limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit
+  });
+
   // --- Auth API ---
 
   // Admin Login
@@ -331,10 +351,111 @@ const storage = multer.diskStorage({
 
   // Student Signup
   app.post('/api/student/signup', upload.fields([{ name: 'photo', maxCount: 1 }]), async (req: any, res: Response) => {
+    const files = req.files;
+    const cleanupTempPhoto = () => {
+      try {
+        if (files?.photo?.[0]?.path && fs.existsSync(files.photo[0].path)) {
+          fs.unlinkSync(files.photo[0].path);
+        }
+      } catch {
+        // Ignore cleanup errors
+      }
+    };
+
     try {
-      const data = req.body;
-      const files = req.files;
-      
+      const data = req.body || {};
+      const rollNumber = String(data.roll_number || '').trim();
+      const regNumber = String(data.reg_number || '').trim();
+      const fullNameEn = String(data.full_name_en || '').trim();
+      const shift = String(data.shift || '').trim();
+      const session = String(data.session || '').trim();
+      const emailValue = String(data.email || '').trim();
+
+      if (!rollNumber || !regNumber || !fullNameEn || !shift || !session || !emailValue || !data.password) {
+        cleanupTempPhoto();
+        return res.status(400).json({ error: 'অনুগ্রহ করে সকল আবশ্যক তথ্য সঠিকভাবে পূরণ করুন।' });
+      }
+
+      // 1. Check if an account already exists with the same Roll, Registration, or Email
+      const { data: existingByRoll } = await supabase
+        .from('students')
+        .select('id')
+        .eq('roll_number', rollNumber)
+        .maybeSingle();
+
+      if (existingByRoll) {
+        cleanupTempPhoto();
+        return res.status(400).json({
+          error: 'এই রোল নম্বর দিয়ে ইতোমধ্যে একটি অ্যাকাউন্ট খোলা হয়েছে। অনুগ্রহ করে লগইন করুন।'
+        });
+      }
+
+      const { data: existingByReg } = await supabase
+        .from('students')
+        .select('id')
+        .eq('reg_number', regNumber)
+        .maybeSingle();
+
+      if (existingByReg) {
+        cleanupTempPhoto();
+        return res.status(400).json({
+          error: 'এই রেজিস্ট্রেশন নম্বর দিয়ে ইতোমধ্যে একটি অ্যাকাউন্ট খোলা হয়েছে।'
+        });
+      }
+
+      const { data: existingByEmail } = await supabase
+        .from('students')
+        .select('id')
+        .eq('email', emailValue)
+        .maybeSingle();
+
+      if (existingByEmail) {
+        cleanupTempPhoto();
+        return res.status(400).json({
+          error: 'এই ইমেইল দিয়ে ইতোমধ্যে একটি অ্যাকাউন্ট খোলা হয়েছে।'
+        });
+      }
+
+      // 2. Verify student against official college registry (uploaded from Admin PDF/CSV)
+      const { data: officialRecord, error: registryError } = await supabase
+        .from('verified_student_records')
+        .select('*')
+        .eq('roll_number', rollNumber)
+        .maybeSingle();
+
+      if (registryError) {
+        cleanupTempPhoto();
+        if (registryError.message?.includes('verified_student_records')) {
+          return res.status(500).json({
+            error: 'কলেজ ভেরিফিকেশন ডাটাবেজ টেবিল পাওয়া যায়নি। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।'
+          });
+        }
+        throw registryError;
+      }
+
+      if (!officialRecord) {
+        cleanupTempPhoto();
+        return res.status(400).json({
+          error: 'দুঃখিত, এই রোল নম্বরটি কলেজের অফিসিয়াল তালিকায় পাওয়া যায়নি। আপনি এই প্রতিষ্ঠানের তালিকাভুক্ত শিক্ষার্থী না হলে সাইন আপ করতে পারবেন না।'
+        });
+      }
+
+      const verification = verifyStudentAgainstRegistry(
+        {
+          full_name_en: fullNameEn,
+          roll_number: rollNumber,
+          reg_number: regNumber,
+        },
+        officialRecord
+      );
+
+      if (!verification.valid) {
+        cleanupTempPhoto();
+        return res.status(400).json({
+          error: `আপনার দেওয়া তথ্য কলেজের অফিসিয়াল তালিকার সাথে মেলেনি (${verification.mismatchedFields.join(', ')})। সঠিক তথ্য দিয়ে পুনরায় চেষ্টা করুন।`
+        });
+      }
+
       const hashedPassword = bcrypt.hashSync(data.password, 10);
       
       let photoPath = null;
@@ -353,16 +474,16 @@ const storage = multer.diskStorage({
 
       const { error } = await supabase.from('students').insert([{
         full_name_bn: data.full_name_bn,
-        full_name_en: data.full_name_en,
-        roll_number: data.roll_number,
-        reg_number: data.reg_number,
-        session: data.session,
+        full_name_en: fullNameEn,
+        roll_number: rollNumber,
+        reg_number: regNumber,
+        session: normalizeSession(session) || session,
         technology: data.technology,
         semester: data.semester,
-        shift: data.shift,
+        shift: normalizeShift(shift) || shift,
         blood_group: data.blood_group,
         mobile: data.mobile,
-        email: data.email,
+        email: emailValue,
         dob: data.dob,
         address: data.address,
         father_name: data.father_name,
@@ -381,8 +502,9 @@ const storage = multer.diskStorage({
 
       res.status(201).json({ message: 'নিবন্ধন সফল হয়েছে। আপনি এখন লগইন করতে পারবেন।' });
     } catch (error: any) {
+      cleanupTempPhoto();
       if (error.message?.includes('unique') || error.code === '23505') {
-        return res.status(400).json({ error: 'Roll, Reg or Email already exists.' });
+        return res.status(400).json({ error: 'এই রোল, রেজিস্ট্রেশন বা ইমেইল দিয়ে ইতোমধ্যে অ্যাকাউন্ট রয়েছে।' });
       }
       res.status(500).json({ error: error.message });
     }
@@ -591,12 +713,26 @@ const storage = multer.diskStorage({
     }
   });
 
+  app.patch('/api/students/:id/downloaded', authenticateToken, requireStudentOrAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { error } = await supabase.from('students').update({ is_downloaded: 1 }).eq('id', id);
+      if (error) throw error;
+      res.json({ message: 'Marked as downloaded' });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { count: total, error: e1 } = await supabase.from('students').select('*', { count: 'exact', head: true });
       const { count: pending, error: e2 } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'pending');
       const { count: approved, error: e3 } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'approved');
-      const { count: printed, error: e4 } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('is_downloaded', 1);
+      const { count: printed, error: e4 } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+        .or('is_downloaded.eq.1,status.eq.printed');
 
       if (e1 || e2 || e3 || e4) throw e1 || e2 || e3 || e4;
 
@@ -606,6 +742,184 @@ const storage = multer.diskStorage({
         approved: approved || 0,
         printed: printed || 0
       });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Admin Official Student Registry (PDF / CSV Verification Database) ---
+
+  app.get('/api/admin/registry', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { data: records, error } = await supabase
+        .from('verified_student_records')
+        .select('*')
+        .order('roll_number', { ascending: true });
+
+      if (error) {
+        if (error.message?.includes('verified_student_records') || error.code === '42P01') {
+          return res.status(400).json({
+            error: 'Supabase-এ verified_student_records টেবিলটি এখনো তৈরি করা হয়নি। অনুগ্রহ করে আপডেটকৃত supabase-setup.sql ফাইলটি Supabase SQL Editor-এ রান করুন।',
+            tableMissing: true,
+          });
+        }
+        throw error;
+      }
+
+      const { data: signedUpStudents } = await supabase
+        .from('students')
+        .select('roll_number');
+
+      const registeredRolls = new Set((signedUpStudents || []).map((s: any) => String(s.roll_number).trim()));
+
+      const enriched = (records || []).map((r: any) => ({
+        ...r,
+        is_registered: registeredRolls.has(String(r.roll_number).trim()),
+      }));
+
+      res.json(enriched);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/registry/parse-pdf', authenticateToken, requireAdmin, registryUpload.single('file'), async (req: any, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'অনুগ্রহ করে একটি PDF বা CSV ফাইল নির্বাচন করুন।' });
+      }
+
+      const defaults = {
+        technology: req.body?.defaultTechnology ? String(req.body.defaultTechnology).trim() : undefined,
+      };
+
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const result = ext === '.csv'
+        ? parseCsvBuffer(req.file.buffer, defaults)
+        : await parsePdfBuffer(req.file.buffer, defaults);
+
+      res.json({
+        fileName: req.file.originalname,
+        pageCount: result.pageCount,
+        totalFound: result.records.length,
+        records: result.records,
+        warnings: result.warnings,
+      });
+    } catch (err: any) {
+      console.error('PDF parse error:', err);
+      res.status(500).json({ error: 'ফাইল বিশ্লেষণ করতে সমস্যা হয়েছে: ' + err.message });
+    }
+  });
+
+  app.post('/api/admin/registry/bulk-save', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { records, source_file } = req.body || {};
+      if (!Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({ error: 'সংরক্ষণ করার জন্য কোনো শিক্ষার্থীর তথ্য পাওয়া যায়নি।' });
+      }
+
+      const dedupedMap = new Map<string, any>();
+      const invalidRows: number[] = [];
+
+      records.forEach((rec: any, index: number) => {
+        const roll = String(rec.roll_number || '').trim();
+        const reg = String(rec.reg_number || '').trim();
+        const name = String(rec.full_name_en || '').replace(/\s+/g, ' ').trim();
+        const technology = rec.technology ? String(rec.technology).trim() : null;
+
+        if (!roll || !reg || !name) {
+          invalidRows.push(index + 1);
+          return;
+        }
+
+        dedupedMap.set(roll, {
+          roll_number: roll,
+          reg_number: reg,
+          full_name_en: name,
+          technology,
+          source_file: source_file || rec.source_file || null,
+          updated_at: new Date().toISOString(),
+        });
+      });
+
+      const validRows = Array.from(dedupedMap.values());
+      if (validRows.length === 0) {
+        return res.status(400).json({
+          error: 'কোনো সম্পূর্ণ রেকর্ড পাওয়া যায়নি। প্রতিটি শিক্ষার্থীর Roll, Reg এবং Name থাকা আবশ্যক।'
+        });
+      }
+
+      const chunkSize = 200;
+      for (let i = 0; i < validRows.length; i += chunkSize) {
+        const chunk = validRows.slice(i, i + chunkSize);
+        const { error } = await supabase
+          .from('verified_student_records')
+          .upsert(chunk, { onConflict: 'roll_number' });
+
+        if (error) {
+          if (error.message?.includes('verified_student_records') || error.code === '42P01') {
+            return res.status(400).json({
+              error: 'Supabase-এ verified_student_records টেবিলটি এখনো তৈরি করা হয়নি। অনুগ্রহ করে supabase-setup.sql রান করুন।'
+            });
+          }
+          throw error;
+        }
+      }
+
+      res.json({
+        savedCount: validRows.length,
+        skippedCount: invalidRows.length,
+        message: `${validRows.length} জন শিক্ষার্থীর তথ্য সফলভাবে ডাটাবেজে সংরক্ষিত হয়েছে।${invalidRows.length > 0 ? ` (${invalidRows.length}টি অসম্পূর্ণ সারি বাদ দেওয়া হয়েছে)` : ''}`
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/registry', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { roll_number, reg_number, full_name_en, technology } = req.body || {};
+      const roll = String(roll_number || '').trim();
+      const reg = String(reg_number || '').trim();
+      const name = String(full_name_en || '').replace(/\s+/g, ' ').trim();
+
+      if (!roll || !reg || !name) {
+        return res.status(400).json({ error: 'রোল, রেজিস্ট্রেশন ও নাম (English) পূরণ করা আবশ্যক।' });
+      }
+
+      const { data, error } = await supabase
+        .from('verified_student_records')
+        .upsert(
+          {
+            roll_number: roll,
+            reg_number: reg,
+            full_name_en: name,
+            technology: technology ? String(technology).trim() : null,
+            source_file: 'Manual Entry',
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'roll_number' }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json({ message: 'শিক্ষার্থীর তথ্য ডাটাবেজে সংরক্ষিত হয়েছে।', record: data });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/registry/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { error } = await supabase
+        .from('verified_student_records')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      res.json({ message: 'রেকর্ড মুছে ফেলা হয়েছে।' });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

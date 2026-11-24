@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Student, SystemSettings } from '../../types';
-import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu, AlertTriangle, Loader2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, FileText, Settings, Search, Check, X, Trash2, Printer, Eye, EyeOff, Download, User as UserIcon, Menu, AlertTriangle, Loader2, FileUp } from 'lucide-react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import IDCard from '../IDCard';
 import html2canvas from 'html2canvas';
@@ -11,6 +11,7 @@ import { safeFetch } from '../../lib/fetchUtils';
 import { saveAs } from 'file-saver';
 import { toPng, toBlob } from 'html-to-image';
 import Footer from '../Footer';
+import StudentRegistryManagement from '../StudentRegistryManagement';
 
 const convertToBase64 = (url: string): Promise<string> => {
   return new Promise((resolve) => {
@@ -132,6 +133,7 @@ export default function AdminDashboard({ user, onLogout }: { user: User, onLogou
   const navLinks = [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/students', label: 'Student List', icon: Users },
+    { to: '/admin/registry', label: 'PDF Verification', icon: FileUp },
     { to: '/admin/reports', label: 'Reports', icon: FileText },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
     { to: '/admin/profile', label: 'Profile Settings', icon: UserIcon },
@@ -236,6 +238,7 @@ export default function AdminDashboard({ user, onLogout }: { user: User, onLogou
           <Routes>
             <Route path="/" element={<AdminHome />} />
             <Route path="/students" element={<StudentManagement />} />
+            <Route path="/registry" element={<StudentRegistryManagement />} />
             <Route path="/settings" element={<SettingsManagement />} />
             <Route path="/profile" element={<AdminProfile user={user} />} />
             <Route path="*" element={<div className="p-10 md:p-20 text-center text-slate-400 font-bengali bg-white rounded-3xl border border-dashed border-slate-200">সেকশনটি শীঘ্রই আপডেট করা হবে।</div>} />
@@ -1473,8 +1476,18 @@ function StudentManagement() {
                 ) : (
                   <div className="flex justify-center -mt-6 md:-mt-10 scale-75 md:scale-90 lg:scale-100 transition-transform origin-top">
                     <IDCard 
-                      user={selectedStudent as any} 
-
+                      user={selectedStudent as any}
+                      onDownload={async () => {
+                        if (!selectedStudent.is_downloaded) {
+                          try {
+                            await safeFetch(`/api/admin/students/${selectedStudent.id}/downloaded`, { method: 'PATCH' });
+                            setStudents(prev => prev.map(s => s.id === selectedStudent.id ? { ...s, is_downloaded: 1 } : s));
+                            setSelectedStudent(prev => prev ? { ...prev, is_downloaded: 1 } : null);
+                          } catch (err) {
+                            console.error('Failed to mark card as downloaded:', err);
+                          }
+                        }
+                      }}
                     />
                   </div>
                 )}

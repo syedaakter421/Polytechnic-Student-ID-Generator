@@ -220,7 +220,24 @@ export default function StudentDashboard({ user, onLogout, onUpdateUser }: { use
           <Routes>
             <Route path="/" element={<DashboardHome user={user} />} />
             <Route path="/profile" element={<ProfilePage user={user} onUpdateUser={onUpdateUser} />} />
-            <Route path="/id-card" element={<IDCard user={user} />} />
+            <Route
+              path="/id-card"
+              element={
+                <IDCard
+                  user={user}
+                  onDownload={async () => {
+                    if (!user.is_downloaded) {
+                      try {
+                        await safeFetch(`/api/students/${user.id}/downloaded`, { method: 'PATCH' });
+                        onUpdateUser({ ...user, is_downloaded: 1 });
+                      } catch (err) {
+                        console.error('Failed to mark student card as downloaded:', err);
+                      }
+                    }
+                  }}
+                />
+              }
+            />
             <Route path="*" element={<div className="font-bengali p-12 text-center text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">এই বিভাগটি শীঘ্রই আপডেট করা হবে।</div>} />
           </Routes>
           <div className="-mx-4 md:-mx-10 mt-10">

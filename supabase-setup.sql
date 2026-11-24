@@ -83,3 +83,22 @@ CREATE POLICY "Enable all for settings" ON public.settings FOR ALL USING (true);
 DROP POLICY IF EXISTS "Enable all for admins" ON public.admins;
 CREATE POLICY "Enable all for admins" ON public.admins FOR ALL USING (true);
 
+-- 5. verified_student_records table (Official College Student List from Admin PDF/CSV)
+CREATE TABLE IF NOT EXISTS public.verified_student_records (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  roll_number TEXT UNIQUE NOT NULL,
+  reg_number TEXT NOT NULL,
+  full_name_en TEXT NOT NULL,
+  technology TEXT,
+  source_file TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_verified_records_reg_number ON public.verified_student_records (reg_number);
+
+ALTER TABLE public.verified_student_records ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Enable all for verified_student_records" ON public.verified_student_records;
+CREATE POLICY "Enable all for verified_student_records" ON public.verified_student_records FOR ALL USING (true);
+
