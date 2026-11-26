@@ -102,3 +102,22 @@ ALTER TABLE public.verified_student_records ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable all for verified_student_records" ON public.verified_student_records;
 CREATE POLICY "Enable all for verified_student_records" ON public.verified_student_records FOR ALL USING (true);
 
+-- Trigger: Deleting from verified_student_records also deletes matching student (by roll, reg, and name) from students
+CREATE OR REPLACE FUNCTION public.delete_matching_student_on_registry_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM public.students
+  WHERE TRIM(roll_number) = TRIM(OLD.roll_number)
+    AND TRIM(reg_number) = TRIM(OLD.reg_number)
+    AND LOWER(REGEXP_REPLACE(REGEXP_REPLACE(TRIM(full_name_en), '[.,]+', ' ', 'g'), '\s+', ' ', 'g'))
+      = LOWER(REGEXP_REPLACE(REGEXP_REPLACE(TRIM(OLD.full_name_en), '[.,]+', ' ', 'g'), '\s+', ' ', 'g'));
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_delete_student_on_registry_delete ON public.verified_student_records;
+CREATE TRIGGER trg_delete_student_on_registry_delete
+AFTER DELETE ON public.verified_student_records
+FOR EACH ROW
+EXECUTE FUNCTION public.delete_matching_student_on_registry_delete();
+

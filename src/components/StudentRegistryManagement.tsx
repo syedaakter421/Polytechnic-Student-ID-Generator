@@ -171,9 +171,9 @@ export default function StudentRegistryManagement() {
 
   const handleDeleteRecord = async (id: string) => {
     try {
-      await safeFetch(`/api/admin/registry/${id}`, { method: 'DELETE' });
+      const res = await safeFetch(`/api/admin/registry/${id}`, { method: 'DELETE' });
       setRecords((prev) => prev.filter((r) => r.id !== id));
-      setStatusBanner({ type: 'success', message: 'রেকর্ড মুছে ফেলা হয়েছে।' });
+      setStatusBanner({ type: 'success', message: res?.message || 'রেকর্ড মুছে ফেলা হয়েছে।' });
     } catch (err: any) {
       setStatusBanner({ type: 'error', message: err.message });
     }

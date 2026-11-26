@@ -513,12 +513,58 @@ const storage = multer.diskStorage({
   // Student Login
   app.post('/api/student/login', async (req, res) => {
     try {
-      const { roll_number, password } = req.body;
-      const { data: student, error } = await supabase.from('students').select('*').eq('roll_number', roll_number).single();
-      
-      if (error || !student || !bcrypt.compareSync(password, student.password)) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+      const rollNumber = String(req.body?.roll_number || '').trim();
+      const password = String(req.body?.password || '');
+
+      if (!rollNumber || !password) {
+        return res.status(400).json({ error: 'অনুগ্রহ করে রোল নম্বর এবং পাসওয়ার্ড দিন।' });
       }
+
+      // 1. Verify roll_number exists in official college registry (verified_student_records)
+      const { data: officialRecord, error: registryError } = await supabase
+        .from('verified_student_records')
+        .select('id, roll_number')
+        .eq('roll_number', rollNumber)
+        .maybeSingle();
+
+      if (registryError) {
+        if (registryError.message?.includes('verified_student_records')) {
+          return res.status(500).json({
+            error: 'কলেজ ভেরিফিকেশন ডাটাবেজ টেবিল পাওয়া যায়নি। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।'
+          });
+        }
+        throw registryError;
+      }
+
+      if (!officialRecord) {
+        return res.status(401).json({
+          error: 'দুঃখিত, এই রোল নম্বরটি কলেজের অফিসিয়াল তালিকায় পাওয়া যায়নি। তাই লগইন করা যাবে না।'
+        });
+      }
+
+      // 2. Verify student has signed up and password matches
+      const { data: student, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('roll_number', rollNumber)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!student) {
+        return res.status(401).json({
+          error: 'এই রোল নম্বর দিয়ে এখনো সাইন আপ করা হয়নি। অনুগ্রহ করে আগে রেজিস্ট্রেশন করুন।'
+        });
+      }
+
+      if (!bcrypt.compareSync(password, student.password)) {
+        return res.status(401).json({
+          error: 'পাসওয়ার্ড সঠিক নয়। অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।'
+        });
+      }
+
       const token = jwt.sign({ id: student.id, role: 'student' }, JWT_SECRET, { expiresIn: '1d' });
       delete student.password;
       res.json({ token, user: { ...student, role: 'student' } });
@@ -913,13 +959,65 @@ const storage = multer.diskStorage({
   app.delete('/api/admin/registry/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
+
+      const { data: record, error: fetchError } = await supabase
+        .from('verified_student_records')
+        .select('id, full_name_en, roll_number, reg_number')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!record) {
+        return res.status(404).json({ error: 'রেকর্ডটি পাওয়া যায়নি।' });
+      }
+
+      const roll = String(record.roll_number || '').trim();
+      const { data: candidateStudents, error: findStudentError } = await supabase
+        .from('students')
+        .select('id, full_name_en, roll_number, reg_number')
+        .eq('roll_number', roll);
+
+      if (findStudentError) throw findStudentError;
+
+      const matchingStudentIds = (candidateStudents || [])
+        .filter((s: any) =>
+          verifyStudentAgainstRegistry(
+            {
+              full_name_en: s.full_name_en,
+              roll_number: s.roll_number,
+              reg_number: s.reg_number,
+            },
+            {
+              full_name_en: record.full_name_en,
+              roll_number: record.roll_number,
+              reg_number: record.reg_number,
+            }
+          ).valid
+        )
+        .map((s: any) => s.id);
+
+      if (matchingStudentIds.length > 0) {
+        const { error: deleteStudentError } = await supabase
+          .from('students')
+          .delete()
+          .in('id', matchingStudentIds);
+
+        if (deleteStudentError) throw deleteStudentError;
+      }
+
       const { error } = await supabase
         .from('verified_student_records')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      res.json({ message: 'রেকর্ড মুছে ফেলা হয়েছে।' });
+
+      res.json({
+        deletedStudentCount: matchingStudentIds.length,
+        message: matchingStudentIds.length > 0
+          ? 'রেকর্ড এবং সংশ্লিষ্ট শিক্ষার্থীর তথ্য students টেবিল থেকেও মুছে ফেলা হয়েছে।'
+          : 'রেকর্ড মুছে ফেলা হয়েছে।'
+      });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -933,6 +1031,11 @@ const storage = multer.diskStorage({
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   };
+
+  // Ensure unmatched /api/* routes always return JSON instead of falling through to SPA HTML
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
+  });
 
   // --- Vite Middleware & Listening Configuration ---
   if (process.env.NODE_ENV !== 'production') {

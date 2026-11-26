@@ -7,6 +7,19 @@ import StudentDashboard from './components/pages/StudentDashboard';
 import AdminDashboard from './components/pages/AdminDashboard';
 import { User } from './types';
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const payload = JSON.parse(atob(padded));
+    return typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +28,25 @@ export default function App() {
     const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
+      if (isTokenExpired(token)) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        if (window.location.pathname.startsWith('/admin')) {
+          window.location.replace('/');
+          return;
+        }
+      } else {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          if (window.location.pathname.startsWith('/admin')) {
+            window.location.replace('/');
+            return;
+          }
+        }
+      }
     }
     setLoading(false);
   }, []);
